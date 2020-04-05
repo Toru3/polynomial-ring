@@ -378,6 +378,27 @@ impl<R: sealed::Sized> Polynomial<R> {
         }
         sum
     }
+    /** derivative
+
+    ```
+    use polynomial_ring::{Polynomial, polynomial};
+    let p = polynomial![1, 2, 3, 2, 1]; // 1+2x+3x^2+2x^3+x^4
+    assert_eq!(p.derivative(), polynomial![2, 6, 6, 4]);
+    ```
+    */
+    pub fn derivative(self) -> Self
+    where
+        R: AddAssignRequire<R> + Mul<Output = R> + From<usize>,
+    {
+        let coef = self
+            .coef
+            .into_iter()
+            .enumerate()
+            .skip(1)
+            .map(|(i, c)| R::from(i) * c)
+            .collect();
+        Polynomial::new(coef)
+    }
 }
 
 // division
