@@ -1,0 +1,30 @@
+[package]
+name = "polynomial-ring"
+version = "0.1.0"
+authors = ["Toru3 <ryuutet@gmail.com>"]
+edition = "2018"
+description = "polynomial on field"
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/polynomial-ring/"
+homepage = "https://crates.io/crates/polynomial-ring"
+repository = "https://gitlab.com/Toru3/polynomial-ring"
+readme = "README.md"
+keywords = ["algebra", "polynomial"]
+categories = ["data-structures", "algorithms", "mathematics"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+num-traits = "0.2.11"
+ring-algorithm = "0.2.0"
+[dev-dependencies]
+num = "0.2.1"
+auto_ops = "0.1.0"
+[features]
+default = []
+__internal_inject_debug = [] # DO NOT USE
+[package.metadata.docs.rs]
+rustdoc-args = [
+    "--html-in-header",
+    "katex.html",
+]
