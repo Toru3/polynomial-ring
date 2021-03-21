@@ -51,6 +51,19 @@ impl<T: crate::sealed::Sized> Polynomial<T> {
     pub fn lc(&self) -> Option<&T> {
         self.deg().map(|d| &self.coef[d])
     }
+    /** get coefficents
+
+    ```
+    use polynomial_ring::Polynomial;
+    let p = Polynomial::new(vec![3, 2, 1]); // 3+2x+x^2
+    assert_eq!(p.coefs(), vec![3, 2, 1]);
+    let q = Polynomial::new(vec![0]); // 0
+    assert_eq!(q.coefs(), vec![]);
+    ```
+    */
+    pub fn coefs(self) -> Vec<T> {
+        self.coef
+    }
 }
 
 macro_rules! from_assign_aux {
