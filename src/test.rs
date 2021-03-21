@@ -34,7 +34,7 @@ fn add2() {
 }
 #[test]
 fn sum() {
-    type R = Polynomial<num::Rational>;
+    type R = Polynomial<num::Rational32>;
     let mut v = Vec::new();
     v.push(make_q_x(vec![(1, 2), (1, 3)]));
     v.push(make_q_x(vec![(1, 4), (1, 5)]));
