@@ -478,8 +478,17 @@ where
     K: AddAssignRequire<K> + for<'x> SubAssign<&'x K>,
     for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
 {
-    fn rem_assign(&mut self, other: &Polynomial<K>) {
+    fn rem_assign(&mut self, other: &Self) {
         self.division(other);
+    }
+}
+impl<'a, K> RemAssign for Polynomial<K>
+where
+    K: AddAssignRequire<K> + for<'x> SubAssign<&'x K>,
+    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
+{
+    fn rem_assign(&mut self, other: Self) {
+        self.division(&other);
     }
 }
 impl<'a, K> Rem for &'a Polynomial<K>
@@ -492,6 +501,40 @@ where
         let mut t = self.clone();
         t %= other;
         t
+    }
+}
+impl<'a, K> Rem<Polynomial<K>> for &'a Polynomial<K>
+where
+    K: AddAssignRequire<K> + for<'x> SubAssign<&'x K>,
+    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
+{
+    type Output = Polynomial<K>;
+    fn rem(self, other: Polynomial<K>) -> Self::Output {
+        let mut t = self.clone();
+        t %= other;
+        t
+    }
+}
+impl<'a, K> Rem<&'a Polynomial<K>> for Polynomial<K>
+where
+    K: AddAssignRequire<K> + for<'x> SubAssign<&'x K>,
+    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
+{
+    type Output = Self;
+    fn rem(mut self, other: &Self) -> Self::Output {
+        self %= other;
+        self
+    }
+}
+impl<K> Rem for Polynomial<K>
+where
+    K: AddAssignRequire<K> + for<'x> SubAssign<&'x K>,
+    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
+{
+    type Output = Self;
+    fn rem(mut self, other: Self) -> Self::Output {
+        self %= &other;
+        self
     }
 }
 impl<K> RingNormalize for Polynomial<K>
