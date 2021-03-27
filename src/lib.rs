@@ -7,8 +7,6 @@ mod sealed {
     #[cfg(feature = "__internal_inject_debug")]
     pub use SizedExt as Sized;
 }
-#[cfg(test)]
-mod test;
 use num_traits::{One, Zero};
 use ring_algorithm::RingNormalize;
 use std::ops::*;
@@ -426,13 +424,53 @@ where
         f.division(other)
     }
 }
+impl<'a, K> Div<Polynomial<K>> for &'a Polynomial<K>
+where
+    K: AddAssignRequire<K> + for<'x> SubAssign<&'x K>,
+    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
+{
+    type Output = Polynomial<K>;
+    fn div(self, other: Polynomial<K>) -> Self::Output {
+        let mut f = self.clone();
+        f.division(&other)
+    }
+}
+impl<K> Div for Polynomial<K>
+where
+    K: AddAssignRequire<K> + for<'x> SubAssign<&'x K>,
+    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
+{
+    type Output = Self;
+    fn div(mut self, other: Self) -> Self::Output {
+        self.division(&other)
+    }
+}
+impl<'a, K> Div<&'a Polynomial<K>> for Polynomial<K>
+where
+    K: AddAssignRequire<K> + for<'x> SubAssign<&'x K>,
+    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
+{
+    type Output = Self;
+    fn div(mut self, other: &Self) -> Self::Output {
+        self.division(other)
+    }
+}
 impl<'a, K> DivAssign<&'a Polynomial<K>> for Polynomial<K>
 where
     K: AddAssignRequire<K> + for<'x> SubAssign<&'x K>,
     for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
 {
-    fn div_assign(&mut self, other: &Polynomial<K>) {
+    fn div_assign(&mut self, other: &Self) {
         *self = &*self / other;
+    }
+}
+impl<K> DivAssign for Polynomial<K>
+where
+    K: AddAssignRequire<K> + for<'x> SubAssign<&'x K>,
+    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
+{
+    fn div_assign(&mut self, other: Self) {
+        *self = &*self / &other;
     }
 }
 impl<'a, K> RemAssign<&'a Polynomial<K>> for Polynomial<K>
