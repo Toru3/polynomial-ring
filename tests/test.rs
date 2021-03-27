@@ -1,8 +1,9 @@
-use crate::*;
+use polynomial_ring::*;
+use std::fmt::{Debug, Display};
 
 fn make_q_x<T>(v: Vec<(T, T)>) -> Polynomial<num::rational::Ratio<T>>
 where
-    T: sealed::Sized + Clone + num::Integer,
+    T: Display + Debug + Clone + num::Integer,
 {
     let v = v
         .into_iter()
