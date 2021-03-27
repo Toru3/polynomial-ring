@@ -220,7 +220,7 @@ impl<G: sealed::Sized + Neg<Output = G>> Neg for Polynomial<G> {
 pub trait SubAssignRequire<G>: sealed::Sized + Clone + Zero + for<'x> SubAssign<&'x G> {}
 impl<G> SubAssignRequire<G> for G where G: sealed::Sized + Clone + Zero + for<'x> SubAssign<&'x G> {}
 impl<'a, G: SubAssignRequire<G>> SubAssign<&'a Polynomial<G>> for Polynomial<G> {
-    fn sub_assign(&mut self, other: &Polynomial<G>) {
+    fn sub_assign(&mut self, other: &Self) {
         let len = self.len();
         self.extend(other.len());
         self.coef
@@ -298,16 +298,16 @@ where
     R: AddAssignRequire<R>,
     for<'x> &'x R: Mul<Output = R>,
 {
-    fn mul_assign(&mut self, other: &Polynomial<R>) {
+    fn mul_assign(&mut self, other: &Self) {
         *self = &*self * other;
     }
 }
-impl<R> MulAssign<Polynomial<R>> for Polynomial<R>
+impl<R> MulAssign for Polynomial<R>
 where
     R: AddAssignRequire<R>,
     for<'x> &'x R: Mul<Output = R>,
 {
-    fn mul_assign(&mut self, other: Polynomial<R>) {
+    fn mul_assign(&mut self, other: Self) {
         *self = &*self * &other;
     }
 }
