@@ -1,3 +1,15 @@
+/*! Polynomial ring $`R[x]`$
+
+```
+use num::Rational;
+use polynomial_ring::Polynomial;
+let p = Polynomial::new(vec![3, 1, 4, 1, 5].into_iter().map(|x| Rational::from_integer(x)).collect());
+let q = Polynomial::new(vec![2, 7, 1].into_iter().map(|x| Rational::from_integer(x)).collect());
+let mut r = p.clone();
+let d = r.division(&q);
+assert_eq!(p, d * q + r);
+```
+*/
 #![cfg_attr(feature = "__internal_inject_debug", recursion_limit = "8")]
 mod sealed {
     pub trait SizedExt: std::marker::Sized + std::fmt::Debug + std::fmt::Display {}
@@ -13,6 +25,18 @@ use sealed::Sized;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, SubAssign};
 mod ops;
 
+/** Polynomial ring $`R[x]`$
+
+```
+use num::Rational;
+use polynomial_ring::Polynomial;
+let p = Polynomial::new(vec![3, 1, 4, 1, 5].into_iter().map(|x| Rational::from_integer(x)).collect());
+let q = Polynomial::new(vec![2, 7, 1].into_iter().map(|x| Rational::from_integer(x)).collect());
+let mut r = p.clone();
+let d = r.division(&q);
+assert_eq!(p, d * q + r);
+```
+*/
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Polynomial<T> {
     coef: Vec<T>,
@@ -154,7 +178,8 @@ impl<M: crate::Sized + Zero> Polynomial<M> {
     }
 }
 #[macro_export]
-/**
+/** make Polynomial (like `vec!`)
+
 ```
 use polynomial_ring::{Polynomial, polynomial};
 let p = Polynomial::new(vec![3, 2, 1]);
