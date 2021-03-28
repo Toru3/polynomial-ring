@@ -36,12 +36,13 @@ fn add2() {
 #[test]
 fn sum() {
     type R = Polynomial<num::Rational32>;
-    let mut v = Vec::new();
-    v.push(make_q_x(vec![(1, 2), (1, 3)]));
-    v.push(make_q_x(vec![(1, 4), (1, 5)]));
-    v.push(make_q_x(vec![(1, 8)]));
-    v.push(make_q_x(vec![(1, 16), (1, 15), (1, 9)]));
-    v.push(make_q_x(vec![(1, 32)]));
+    let v = vec![
+        make_q_x(vec![(1, 2), (1, 3)]),
+        make_q_x(vec![(1, 4), (1, 5)]),
+        make_q_x(vec![(1, 8)]),
+        make_q_x(vec![(1, 16), (1, 15), (1, 9)]),
+        make_q_x(vec![(1, 32)]),
+    ];
     assert_eq!(
         v.into_iter().sum::<R>(),
         make_q_x(vec![(31, 32), (9, 15), (1, 9)])
@@ -81,6 +82,7 @@ fn mul() {
 }
 
 mod residue_class {
+    #![allow(clippy::suspicious_op_assign_impl)]
     use auto_ops::impl_op_ex;
     #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
     pub struct ResidueClass6 {
@@ -99,12 +101,12 @@ mod residue_class {
     impl_op_ex!(+= |a: &mut ResidueClass6, b: &ResidueClass6| { a.n = (a.n + b.n) % 6; });
     impl_op_ex!(*= |a: &mut ResidueClass6, b: &ResidueClass6| { a.n = (a.n * b.n) % 6; });
     impl_op_ex!(+ |a: &ResidueClass6, b: &ResidueClass6| -> ResidueClass6 {
-        let mut c = a.clone();
+        let mut c = *a;
         c += b;
         c
     });
     impl_op_ex!(*|a: &ResidueClass6, b: &ResidueClass6| -> ResidueClass6 {
-        let mut c = a.clone();
+        let mut c = *a;
         c *= b;
         c
     });
@@ -128,12 +130,13 @@ fn mul2() {
 #[test]
 fn product() {
     type R = Polynomial<i64>;
-    let mut v = Vec::new();
-    v.push(polynomial![-2, 1]);
-    v.push(polynomial![-1, 1]);
-    v.push(polynomial![0, 1]);
-    v.push(polynomial![1, 1]);
-    v.push(polynomial![2, 1]);
+    let v = vec![
+        polynomial![-2, 1],
+        polynomial![-1, 1],
+        polynomial![0, 1],
+        polynomial![1, 1],
+        polynomial![2, 1],
+    ];
     let p = v.into_iter().product::<R>();
     assert_eq!(p, polynomial![0, 4, 0, -5, 0, 1]);
 }
