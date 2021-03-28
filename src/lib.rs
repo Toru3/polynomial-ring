@@ -9,13 +9,15 @@ mod sealed {
 }
 use num_traits::{One, Zero};
 use ring_algorithm::RingNormalize;
-use std::ops::*;
+use sealed::Sized;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, SubAssign};
+mod ops;
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Polynomial<T> {
     coef: Vec<T>,
 }
-impl<T: crate::sealed::Sized> Polynomial<T> {
+impl<T: crate::Sized> Polynomial<T> {
     fn len(&self) -> usize {
         self.coef.len()
     }
@@ -65,11 +67,11 @@ impl<T: crate::sealed::Sized> Polynomial<T> {
 }
 
 // additive monoid
-impl<'a, M> AddAssign<&'a Polynomial<M>> for Polynomial<M>
-where
-    M: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
-{
-    fn add_assign(&mut self, other: &Self) {
+impl<M> Polynomial<M> {
+    fn add_assign_ref(&mut self, other: &Self)
+    where
+        M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    {
         let len = self.len();
         self.extend(other.len());
         self.coef
@@ -81,59 +83,9 @@ where
         }
     }
 }
-impl<M> AddAssign for Polynomial<M>
-where
-    M: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
-{
-    fn add_assign(&mut self, other: Self) {
-        *self += &other
-    }
-}
-impl<'a, M> Add for &'a Polynomial<M>
-where
-    M: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
-{
-    type Output = Polynomial<M>;
-    fn add(self, other: Self) -> Self::Output {
-        let mut f = self.clone();
-        f += other;
-        f
-    }
-}
-impl<'a, M> Add<Polynomial<M>> for &'a Polynomial<M>
-where
-    M: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
-{
-    type Output = Polynomial<M>;
-    fn add(self, other: Polynomial<M>) -> Self::Output {
-        let mut f = self.clone();
-        f += &other;
-        f
-    }
-}
-impl<'a, M> Add<&'a Polynomial<M>> for Polynomial<M>
-where
-    M: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
-{
-    type Output = Self;
-    fn add(mut self, other: &Self) -> Self::Output {
-        self += other;
-        self
-    }
-}
-impl<M> Add for Polynomial<M>
-where
-    M: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
-{
-    type Output = Self;
-    fn add(mut self, other: Polynomial<M>) -> Self::Output {
-        self += &other;
-        self
-    }
-}
 impl<M> Zero for Polynomial<M>
 where
-    M: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
 {
     fn zero() -> Self {
         Self { coef: Vec::new() }
@@ -144,13 +96,13 @@ where
 }
 impl<M> std::iter::Sum for Polynomial<M>
 where
-    M: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
 {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(Self::zero(), Add::add)
     }
 }
-impl<M: crate::sealed::Sized + Zero> Polynomial<M> {
+impl<M: crate::Sized + Zero> Polynomial<M> {
     fn trim_zero(&mut self) {
         let len = self
             .coef
@@ -217,19 +169,28 @@ macro_rules! polynomial {
 }
 
 // additive group
-impl<G: sealed::Sized + Neg<Output = G>> Neg for Polynomial<G> {
-    type Output = Self;
-    fn neg(self) -> Self {
+impl<G> Polynomial<G> {
+    fn neg_impl(self) -> Self
+    where
+        G: Sized + Neg<Output = G>,
+    {
         Polynomial {
             coef: self.coef.into_iter().map(|v| -v).collect(),
         }
     }
-}
-impl<'a, G> SubAssign<&'a Polynomial<G>> for Polynomial<G>
-where
-    G: sealed::Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
-{
-    fn sub_assign(&mut self, other: &Self) {
+    fn neg_ref(&self) -> Self
+    where
+        G: Sized,
+        for<'x> &'x G: Neg<Output = G>,
+    {
+        Polynomial {
+            coef: self.coef.iter().map(|v| -v).collect(),
+        }
+    }
+    fn sub_assign_ref(&mut self, other: &Self)
+    where
+        G: Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
+    {
         let len = self.len();
         self.extend(other.len());
         self.coef
@@ -241,77 +202,25 @@ where
         }
     }
 }
-impl<G> SubAssign for Polynomial<G>
-where
-    G: sealed::Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
-{
-    fn sub_assign(&mut self, other: Self) {
-        *self -= &other
-    }
-}
-impl<'a, G> Sub for &'a Polynomial<G>
-where
-    G: sealed::Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
-{
-    type Output = Polynomial<G>;
-    fn sub(self, other: Self) -> Self::Output {
-        let mut f = self.clone();
-        f -= other;
-        f
-    }
-}
-impl<'a, G> Sub<Polynomial<G>> for &'a Polynomial<G>
-where
-    G: sealed::Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
-{
-    type Output = Polynomial<G>;
-    fn sub(self, other: Polynomial<G>) -> Self::Output {
-        let mut f = self.clone();
-        f -= &other;
-        f
-    }
-}
-impl<'a, G> Sub<&'a Polynomial<G>> for Polynomial<G>
-where
-    G: sealed::Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
-{
-    type Output = Self;
-    fn sub(mut self, other: &Self) -> Self::Output {
-        self -= other;
-        self
-    }
-}
-impl<G> Sub for Polynomial<G>
-where
-    G: sealed::Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
-{
-    type Output = Self;
-    fn sub(mut self, other: Polynomial<G>) -> Self::Output {
-        self -= &other;
-        self
-    }
-}
 
 // unitary ring
 fn mul_aux<R>(sum: &mut [R], coef: &R, vec: &[R])
 where
-    R: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x R>,
+    R: Sized + Clone + Zero + for<'x> AddAssign<&'x R>,
     for<'x> &'x R: Mul<Output = R>,
 {
     sum.iter_mut()
         .zip(vec.iter())
         .for_each(|(l, r)| *l += &(coef * r));
 }
-impl<'a, R> Mul for &'a Polynomial<R>
-where
-    R: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x R>,
-    for<'x> &'x R: Mul<Output = R>,
-{
-    type Output = Polynomial<R>;
-    #[allow(clippy::suspicious_arithmetic_impl)]
-    fn mul(self, other: Self) -> Self::Output {
+impl<R> Polynomial<R> {
+    fn mul_impl(&self, other: &Self) -> Self
+    where
+        R: Sized + Clone + Zero + for<'x> AddAssign<&'x R>,
+        for<'x> &'x R: Mul<Output = R>,
+    {
         if self.is_zero() || other.is_zero() {
-            return Self::Output::zero();
+            return Self::zero();
         }
         let mut coef = vec![R::zero(); self.len() + other.len() - 1];
         self.coef
@@ -321,57 +230,9 @@ where
         Polynomial::<R>::new(coef) // R may not be a domain.
     }
 }
-impl<'a, R> Mul<Polynomial<R>> for &'a Polynomial<R>
-where
-    R: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x R>,
-    for<'x> &'x R: Mul<Output = R>,
-{
-    type Output = Polynomial<R>;
-    fn mul(self, other: Polynomial<R>) -> Self::Output {
-        self * &other
-    }
-}
-impl<R> Mul for Polynomial<R>
-where
-    R: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x R>,
-    for<'x> &'x R: Mul<Output = R>,
-{
-    type Output = Self;
-    fn mul(self, other: Self) -> Self::Output {
-        &self * &other
-    }
-}
-impl<'a, R> Mul<&'a Polynomial<R>> for Polynomial<R>
-where
-    R: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x R>,
-    for<'x> &'x R: Mul<Output = R>,
-{
-    type Output = Self;
-    fn mul(self, other: &Self) -> Self::Output {
-        &self * other
-    }
-}
-impl<'a, R> MulAssign<&'a Polynomial<R>> for Polynomial<R>
-where
-    R: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x R>,
-    for<'x> &'x R: Mul<Output = R>,
-{
-    fn mul_assign(&mut self, other: &Self) {
-        *self = &*self * other;
-    }
-}
-impl<R> MulAssign for Polynomial<R>
-where
-    R: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x R>,
-    for<'x> &'x R: Mul<Output = R>,
-{
-    fn mul_assign(&mut self, other: Self) {
-        *self = &*self * &other;
-    }
-}
 impl<R> One for Polynomial<R>
 where
-    R: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x R> + One,
+    R: Sized + Clone + Zero + for<'x> AddAssign<&'x R> + One,
     for<'x> &'x R: Mul<Output = R>,
 {
     fn one() -> Self {
@@ -380,7 +241,7 @@ where
 }
 impl<R> std::iter::Product for Polynomial<R>
 where
-    R: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x R> + One,
+    R: Sized + Clone + Zero + for<'x> AddAssign<&'x R> + One,
     for<'x> &'x R: Mul<Output = R>,
 {
     fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
@@ -423,7 +284,7 @@ where
         Ok(())
     }
 }
-impl<R: sealed::Sized> Polynomial<R> {
+impl<R: Sized> Polynomial<R> {
     /** evaluate polynomial by Horner's method
 
     ```
@@ -435,7 +296,7 @@ impl<R: sealed::Sized> Polynomial<R> {
     */
     pub fn eval<'a>(&self, x: &'a R) -> R
     where
-        R: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x R> + MulAssign<&'a R>,
+        R: Sized + Clone + Zero + for<'x> AddAssign<&'x R> + MulAssign<&'a R>,
     {
         if self.coef.is_empty() {
             return R::zero();
@@ -457,7 +318,7 @@ impl<R: sealed::Sized> Polynomial<R> {
     */
     pub fn derivative(self) -> Self
     where
-        R: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x R> + Mul<Output = R> + From<usize>,
+        R: Sized + Clone + Zero + for<'x> AddAssign<&'x R> + Mul<Output = R> + From<usize>,
     {
         let coef = self
             .coef
@@ -470,134 +331,10 @@ impl<R: sealed::Sized> Polynomial<R> {
     }
 }
 
-// division
-impl<'a, K> Div for &'a Polynomial<K>
-where
-    K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
-{
-    type Output = Polynomial<K>;
-    fn div(self, other: Self) -> Self::Output {
-        let mut f = self.clone();
-        f.division(other)
-    }
-}
-impl<'a, K> Div<Polynomial<K>> for &'a Polynomial<K>
-where
-    K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
-{
-    type Output = Polynomial<K>;
-    fn div(self, other: Polynomial<K>) -> Self::Output {
-        let mut f = self.clone();
-        f.division(&other)
-    }
-}
-impl<K> Div for Polynomial<K>
-where
-    K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
-{
-    type Output = Self;
-    fn div(mut self, other: Self) -> Self::Output {
-        self.division(&other)
-    }
-}
-impl<'a, K> Div<&'a Polynomial<K>> for Polynomial<K>
-where
-    K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
-{
-    type Output = Self;
-    fn div(mut self, other: &Self) -> Self::Output {
-        self.division(other)
-    }
-}
-impl<'a, K> DivAssign<&'a Polynomial<K>> for Polynomial<K>
-where
-    K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
-{
-    fn div_assign(&mut self, other: &Self) {
-        *self = &*self / other;
-    }
-}
-impl<K> DivAssign for Polynomial<K>
-where
-    K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
-{
-    fn div_assign(&mut self, other: Self) {
-        *self = &*self / &other;
-    }
-}
-impl<'a, K> RemAssign<&'a Polynomial<K>> for Polynomial<K>
-where
-    K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
-{
-    fn rem_assign(&mut self, other: &Self) {
-        self.division(other);
-    }
-}
-impl<'a, K> RemAssign for Polynomial<K>
-where
-    K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
-{
-    fn rem_assign(&mut self, other: Self) {
-        self.division(&other);
-    }
-}
-impl<'a, K> Rem for &'a Polynomial<K>
-where
-    K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
-{
-    type Output = Polynomial<K>;
-    fn rem(self, other: Self) -> Self::Output {
-        let mut t = self.clone();
-        t %= other;
-        t
-    }
-}
-impl<'a, K> Rem<Polynomial<K>> for &'a Polynomial<K>
-where
-    K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
-{
-    type Output = Polynomial<K>;
-    fn rem(self, other: Polynomial<K>) -> Self::Output {
-        let mut t = self.clone();
-        t %= other;
-        t
-    }
-}
-impl<'a, K> Rem<&'a Polynomial<K>> for Polynomial<K>
-where
-    K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
-{
-    type Output = Self;
-    fn rem(mut self, other: &Self) -> Self::Output {
-        self %= other;
-        self
-    }
-}
-impl<K> Rem for Polynomial<K>
-where
-    K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
-{
-    type Output = Self;
-    fn rem(mut self, other: Self) -> Self::Output {
-        self %= &other;
-        self
-    }
-}
+// field
 impl<K> RingNormalize for Polynomial<K>
 where
-    K: sealed::Sized
+    K: Sized
         + Clone
         + Zero
         + for<'x> AddAssign<&'x K>
@@ -617,7 +354,7 @@ where
         self.monic();
     }
 }
-impl<K: sealed::Sized> Polynomial<K> {
+impl<K: Sized> Polynomial<K> {
     /** make polynomial monic
 
     ```
@@ -652,7 +389,7 @@ impl<K: sealed::Sized> Polynomial<K> {
     */
     pub fn division(&mut self, other: &Self) -> Self
     where
-        K: sealed::Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
+        K: Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
         for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
     {
         let g_deg = other.deg().expect("Division by zero");
