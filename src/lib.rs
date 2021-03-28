@@ -334,13 +334,7 @@ impl<R: Sized> Polynomial<R> {
 // field
 impl<K> RingNormalize for Polynomial<K>
 where
-    K: Sized
-        + Clone
-        + Zero
-        + for<'x> AddAssign<&'x K>
-        + for<'x> SubAssign<&'x K>
-        + for<'x> DivAssign<&'x K>
-        + One,
+    K: Sized + Clone + Zero + One + for<'x> AddAssign<&'x K> + for<'x> DivAssign<&'x K>,
     for<'x> &'x K: Mul<Output = K>,
 {
     fn leading_unit(&self) -> Self {
