@@ -431,4 +431,31 @@ impl<K: Sized> Polynomial<K> {
         }
         Self { coef }
     }
+    /** square free
+
+    ```
+    use polynomial_ring::{Polynomial, polynomial};
+    use num::Rational;
+    let f = polynomial![Rational::from(1), Rational::from(1)];
+    let g = polynomial![Rational::from(1), Rational::from(1), Rational::from(1)];
+    let p = &f * &f * &f * &g * &g; // (x+1)^3(x^2+x+1)^2
+    assert_eq!(p.square_free(), &f * &g); // (x+1)(x^2+x+1)
+    ```
+    */
+    pub fn square_free(&self) -> Self
+    where
+        K: Sized
+            + Clone
+            + Zero
+            + One
+            + Mul<Output = K>
+            + for<'x> AddAssign<&'x K>
+            + for<'x> SubAssign<&'x K>
+            + for<'x> DivAssign<&'x K>,
+        for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
+    {
+        let d = self.clone().derivative().into_normalize();
+        let f = ring_algorithm::gcd::<Self>(self.clone(), d).into_normalize();
+        (self / &f).into_normalize()
+    }
 }
