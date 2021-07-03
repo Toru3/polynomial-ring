@@ -343,15 +343,17 @@ impl<R: Sized> Polynomial<R> {
     */
     pub fn derivative(self) -> Self
     where
-        R: Sized + Clone + Zero + for<'x> AddAssign<&'x R> + Mul<Output = R> + From<usize>,
+        R: Sized + Clone + Zero + One + for<'x> AddAssign<&'x R> + Mul<Output = R>,
+        for<'x> &'x R: Mul<Output = R>,
     {
-        let coef = self
-            .coef
-            .into_iter()
-            .enumerate()
-            .skip(1)
-            .map(|(i, c)| R::from(i) * c)
-            .collect();
+        let n = self.coef.len();
+        let n = if n > 0 { n - 1 } else { 0 };
+        let mut coef = Vec::with_capacity(n);
+        let mut i = R::one();
+        for c in self.coef.into_iter().skip(1) {
+            coef.push(&i * &c);
+            i += &R::one();
+        }
         Polynomial::new(coef)
     }
 }
