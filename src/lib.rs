@@ -1,10 +1,10 @@
 /*! Polynomial ring $`R[x]`$
 
 ```
-use num::Rational;
+use num::Rational64;
 use polynomial_ring::Polynomial;
-let p = Polynomial::new(vec![3, 1, 4, 1, 5].into_iter().map(|x| Rational::from_integer(x)).collect());
-let q = Polynomial::new(vec![2, 7, 1].into_iter().map(|x| Rational::from_integer(x)).collect());
+let p = Polynomial::new(vec![3, 1, 4, 1, 5].into_iter().map(|x| Rational64::from_integer(x)).collect());
+let q = Polynomial::new(vec![2, 7, 1].into_iter().map(|x| Rational64::from_integer(x)).collect());
 let mut r = p.clone();
 let d = r.division(&q);
 assert_eq!(p, d * q + r);
@@ -28,10 +28,10 @@ mod ops;
 /** Polynomial ring $`R[x]`$
 
 ```
-use num::Rational;
+use num::Rational64;
 use polynomial_ring::Polynomial;
-let p = Polynomial::new(vec![3, 1, 4, 1, 5].into_iter().map(|x| Rational::from_integer(x)).collect());
-let q = Polynomial::new(vec![2, 7, 1].into_iter().map(|x| Rational::from_integer(x)).collect());
+let p = Polynomial::new(vec![3, 1, 4, 1, 5].into_iter().map(|x| Rational64::from_integer(x)).collect());
+let q = Polynomial::new(vec![2, 7, 1].into_iter().map(|x| Rational64::from_integer(x)).collect());
 let mut r = p.clone();
 let d = r.division(&q);
 assert_eq!(p, d * q + r);
@@ -379,11 +379,11 @@ impl<K: Sized> Polynomial<K> {
     /** make polynomial monic
 
     ```
-    use num::Rational;
+    use num::Rational64;
     use polynomial_ring::Polynomial;
-    let mut p = Polynomial::new(vec![1, 2, 3].into_iter().map(|x| Rational::from_integer(x)).collect());
+    let mut p = Polynomial::new(vec![1, 2, 3].into_iter().map(|x| Rational64::from_integer(x)).collect());
     p.monic();
-    let q = Polynomial::new(vec![(1, 3), (2, 3), (1, 1)].into_iter().map(|(n, d)| Rational::new(n, d)).collect());
+    let q = Polynomial::new(vec![(1, 3), (2, 3), (1, 1)].into_iter().map(|(n, d)| Rational64::new(n, d)).collect());
     assert_eq!(p, q);
     ```
     */
@@ -399,10 +399,10 @@ impl<K: Sized> Polynomial<K> {
     /** polynomial division
 
     ```
-    use num::Rational;
+    use num::Rational64;
     use polynomial_ring::Polynomial;
-    let p = Polynomial::new(vec![3, 1, 4, 1, 5].into_iter().map(|x| Rational::from_integer(x)).collect());
-    let q = Polynomial::new(vec![2, 7, 1].into_iter().map(|x| Rational::from_integer(x)).collect());
+    let p = Polynomial::new(vec![3, 1, 4, 1, 5].into_iter().map(|x| Rational64::from_integer(x)).collect());
+    let q = Polynomial::new(vec![2, 7, 1].into_iter().map(|x| Rational64::from_integer(x)).collect());
     let mut r = p.clone();
     let d = r.division(&q);
     assert_eq!(p, d * q + r);
@@ -435,9 +435,9 @@ impl<K: Sized> Polynomial<K> {
 
     ```
     use polynomial_ring::{Polynomial, polynomial};
-    use num::Rational;
-    let f = polynomial![Rational::from(1), Rational::from(1)];
-    let g = polynomial![Rational::from(1), Rational::from(1), Rational::from(1)];
+    use num::Rational64;
+    let f = polynomial![Rational64::from(1), Rational64::from(1)];
+    let g = polynomial![Rational64::from(1), Rational64::from(1), Rational64::from(1)];
     let p = &f * &f * &f * &g * &g; // (x+1)^3(x^2+x+1)^2
     assert_eq!(p.square_free(), &f * &g); // (x+1)(x^2+x+1)
     ```
