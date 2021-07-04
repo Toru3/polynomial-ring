@@ -342,3 +342,127 @@ where
         self
     }
 }
+
+// scalar ops
+// MulAssign
+impl<'a, R> MulAssign<&'a R> for Polynomial<R>
+where
+    R: Sized + Zero + for<'x> MulAssign<&'x R>,
+{
+    fn mul_assign(&mut self, other: &R) {
+        self.scalar_mul_assign_impl(other);
+    }
+}
+impl<'a, R> MulAssign<R> for Polynomial<R>
+where
+    R: Sized + Zero + for<'x> MulAssign<&'x R>,
+{
+    fn mul_assign(&mut self, other: R) {
+        self.scalar_mul_assign_impl(&other);
+    }
+}
+
+// Mul
+impl<'a, R> Mul<&'a R> for &'a Polynomial<R>
+where
+    R: Sized + Clone + Zero + for<'x> MulAssign<&'x R>,
+{
+    type Output = Polynomial<R>;
+    fn mul(self, other: &R) -> Self::Output {
+        let mut f = self.clone();
+        f *= other;
+        f
+    }
+}
+impl<'a, R> Mul<R> for &'a Polynomial<R>
+where
+    R: Sized + Clone + Zero + for<'x> MulAssign<&'x R>,
+{
+    type Output = Polynomial<R>;
+    fn mul(self, other: R) -> Self::Output {
+        let mut f = self.clone();
+        f *= &other;
+        f
+    }
+}
+impl<'a, R> Mul<&'a R> for Polynomial<R>
+where
+    R: Sized + Clone + Zero + for<'x> MulAssign<&'x R>,
+{
+    type Output = Self;
+    fn mul(mut self, other: &R) -> Self::Output {
+        self *= other;
+        self
+    }
+}
+impl<R> Mul<R> for Polynomial<R>
+where
+    R: Sized + Clone + Zero + for<'x> MulAssign<&'x R>,
+{
+    type Output = Self;
+    fn mul(mut self, other: R) -> Self::Output {
+        self *= &other;
+        self
+    }
+}
+// DivAssign
+impl<'a, R> DivAssign<&'a R> for Polynomial<R>
+where
+    R: Sized + Zero + for<'x> DivAssign<&'x R>,
+{
+    fn div_assign(&mut self, other: &R) {
+        self.scalar_div_assign_impl(other);
+    }
+}
+impl<'a, R> DivAssign<R> for Polynomial<R>
+where
+    R: Sized + Zero + for<'x> DivAssign<&'x R>,
+{
+    fn div_assign(&mut self, other: R) {
+        self.scalar_div_assign_impl(&other);
+    }
+}
+
+// Div
+impl<'a, R> Div<&'a R> for &'a Polynomial<R>
+where
+    R: Sized + Clone + Zero + for<'x> DivAssign<&'x R>,
+{
+    type Output = Polynomial<R>;
+    fn div(self, other: &R) -> Self::Output {
+        let mut f = self.clone();
+        f /= other;
+        f
+    }
+}
+impl<'a, R> Div<R> for &'a Polynomial<R>
+where
+    R: Sized + Clone + Zero + for<'x> DivAssign<&'x R>,
+{
+    type Output = Polynomial<R>;
+    fn div(self, other: R) -> Self::Output {
+        let mut f = self.clone();
+        f /= &other;
+        f
+    }
+}
+impl<'a, R> Div<&'a R> for Polynomial<R>
+where
+    R: Sized + Clone + Zero + for<'x> DivAssign<&'x R>,
+{
+    type Output = Self;
+    fn div(mut self, other: &R) -> Self::Output {
+        self /= other;
+        self
+    }
+}
+impl<R> Div<R> for Polynomial<R>
+where
+    R: Sized + Clone + Zero + for<'x> DivAssign<&'x R>,
+{
+    type Output = Self;
+    fn div(mut self, other: R) -> Self::Output {
+        self /= &other;
+        self
+    }
+}

@@ -356,6 +356,13 @@ impl<R: Sized> Polynomial<R> {
         }
         Polynomial::new(coef)
     }
+    fn scalar_mul_assign_impl(&mut self, alpha: &R)
+    where
+        R: Sized + Zero + for<'x> MulAssign<&'x R>,
+    {
+        self.coef.iter_mut().for_each(|c| *c *= alpha);
+        self.trim_zero();
+    }
 }
 
 // field
@@ -457,5 +464,11 @@ impl<K: Sized> Polynomial<K> {
         let d = self.clone().derivative().into_normalize();
         let f = ring_algorithm::gcd::<Self>(self.clone(), d).into_normalize();
         (self / &f).into_normalize()
+    }
+    fn scalar_div_assign_impl(&mut self, alpha: &K)
+    where
+        K: Sized + Zero + for<'x> DivAssign<&'x K>,
+    {
+        self.coef.iter_mut().for_each(|c| *c /= alpha);
     }
 }

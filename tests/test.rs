@@ -146,3 +146,15 @@ fn display() {
     assert_eq!(polynomial![3, 2, 1].to_string(), "x^2+2*x+3");
     assert_eq!(polynomial![0, -2, -1, 3].to_string(), "3*x^3+-1*x^2+-2*x");
 }
+#[test]
+fn scalar_mul() {
+    let p = polynomial![1, 4, 1, 4, 1, 3, 5, 6];
+    assert_eq!(p * 2, polynomial![2, 8, 2, 8, 2, 6, 10, 12]);
+}
+#[test]
+fn scalar_div() {
+    let p = make_q_x(vec![(3, 1), (4, 1), (5, 9)]);
+    let q = make_q_x(vec![(3, 2), (2, 1), (5, 18)]);
+    let two = num::rational::Ratio::new(2, 1);
+    assert_eq!(p / two, q);
+}
