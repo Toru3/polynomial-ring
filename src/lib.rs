@@ -22,7 +22,7 @@ mod sealed {
 use num_traits::{One, Zero};
 use ring_algorithm::RingNormalize;
 use sealed::Sized;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 mod ops;
 
 /** Polynomial ring $`R[x]`$
@@ -362,6 +362,75 @@ impl<R: Sized> Polynomial<R> {
     {
         self.coef.iter_mut().for_each(|c| *c *= alpha);
         self.trim_zero();
+    }
+    /** pseudo division
+
+    Let $`R`$ be an [integral domain](https://en.wikipedia.org/wiki/Integral_domain).
+    Let $`f, g \in R[x]`$, where $`g \neq 0`$.
+    This function calculate $`s \in R`$, $`q, r \in R[x]`$ s.t. $`sf=qg+r`$,
+    where $`r=0`$ or $`\deg(r)<\deg(g)`$.
+    ```
+    use polynomial_ring::{polynomial, Polynomial};
+    let f = polynomial![1, 3, 1]; // 1+3x+x^2 ∈ Z[x]
+    let g = polynomial![5, 2]; // 5+2x ∈ Z[x]
+    let mut r = f.clone();
+    let (s, q) = r.pseudo_division(&g);
+    assert_eq!(f * s, q * g + r);
+    let f = polynomial![1, -1, -1, 1]; // 1-x-x^2+x^3 ∈ Z[x]
+    let g = polynomial![1, 2]; // 1+2x ∈ Z[x]
+    let mut r = f.clone();
+    let (s, q) = r.pseudo_division(&g);
+    assert_eq!(polynomial![s] * f, q * g + r);
+    // 1-yx-x^2+yx^3 ∈ Z[y][x]
+    let f = polynomial![polynomial![1], polynomial![0, -1], polynomial![-1], polynomial![0, 1]];
+    // -1+y^2x ∈ Z[y][x]
+    let g = polynomial![polynomial![-1], polynomial![0, 0, 1]];
+    let mut r = f.clone();
+    let (s, q) = r.pseudo_division(&g);
+    assert_eq!(f * s, q * g + r);
+    // x^3 ∈ Z[y][x]
+    let f = polynomial![polynomial![], polynomial![], polynomial![], polynomial![1]];
+    // yx ∈ Z[y][x]
+    let g = polynomial![polynomial![], polynomial![0, 1]];
+    let mut r = f.clone();
+    let (s, q) = r.pseudo_division(&g);
+    assert_eq!(f * s, q * g + r);
+    ```
+    */
+    pub fn pseudo_division(&mut self, other: &Self) -> (R, Self)
+    where
+        R: Sized + Clone + Zero + One + for<'x> AddAssign<&'x R> + for<'x> MulAssign<&'x R>,
+        for<'x> &'x R: Sub<Output = R> + Mul<Output = R>,
+    {
+        let g_deg = other.deg().expect("Division by zero");
+        let f_deg = self.deg();
+        if f_deg < other.deg() {
+            return (R::one(), Self::zero());
+        }
+        let f_deg = f_deg.unwrap();
+        assert!(f_deg >= g_deg);
+        let k = f_deg - g_deg + 1;
+        let lc = other.lc().unwrap();
+        let mut coef = vec![R::zero(); k];
+        let mut scale = R::one();
+        while self.deg() >= other.deg() {
+            let d = self.deg().unwrap() - g_deg;
+            let c = self.lc().unwrap().clone();
+            for i in 0..other.len() - 1 {
+                self.coef[i + d] = &(lc * &self.coef[i + d]) - &(&c * &other.coef[i]);
+            }
+            for i in 0..d {
+                self.coef[i] *= lc;
+            }
+            self.coef.pop(); // new deg < prev deg
+            self.trim_zero();
+            for c_i in coef.iter_mut().skip(d + 1) {
+                *c_i *= lc;
+            }
+            coef[d] = c;
+            scale *= lc;
+        }
+        (scale, Self { coef })
     }
 }
 
