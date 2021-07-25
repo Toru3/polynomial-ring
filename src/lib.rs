@@ -432,7 +432,7 @@ impl<R: Sized> Polynomial<R> {
         }
         (scale, Self { coef })
     }
-    /** resultant
+    /** calculate [resultant](https://en.wikipedia.org/wiki/Resultant)
 
     ```
     use polynomial_ring::{polynomial, Polynomial};
@@ -572,7 +572,7 @@ impl<K: Sized> Polynomial<K> {
         }
         Self { coef }
     }
-    /** square free
+    /** calculate [square-free polynomial](https://en.wikipedia.org/wiki/Square-free_polynomial)
 
     ```
     use polynomial_ring::{Polynomial, polynomial};
