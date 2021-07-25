@@ -432,6 +432,71 @@ impl<R: Sized> Polynomial<R> {
         }
         (scale, Self { coef })
     }
+    /** resultant
+
+    ```
+    use polynomial_ring::{polynomial, Polynomial};
+    use num_traits::{One, Zero};
+    let f = polynomial![0, 2, 0, 1]; // 2x+x^3 ∈ Z[x]
+    let g = polynomial![2, 3, 5]; // 2+3x+5x^2 ∈ Z[x]
+    let r = f.resultant(g);
+    assert_eq!(r, 164);
+    let f = polynomial![-4, 0, 0, 0, 1]; // -4+x^4 ∈ Z[x]
+    let g = polynomial![0, 2, 0, 1]; // 2x+x^3 ∈ Z[x]
+    let r = f.resultant(g); // deg(gcd(f, g)) = deg(x^2-2) = 2 ≠ 0
+    assert_eq!(r, 0);
+    let f = polynomial![polynomial![1], polynomial![0], polynomial![1]]; // 1+x^2 ∈ Z[y][x]
+    let g = polynomial![polynomial![1], polynomial![1, 2]]; // 1+(1+2y)x ∈ Z[y][x]
+    let r = f.resultant(g);
+    assert_eq!(r, polynomial![2, 4, 4]); // 2+4y+4y^2
+    let y3 = Polynomial::from_monomial(polynomial![-1], 3); // -y^3 ∈ Z[x][y]
+    let y2xy = Polynomial::from_monomial(polynomial![0, -1], 2) + &y3; // -xy^2-y^3 ∈ Z[x][y]
+    let x = polynomial![polynomial![0, 1]]; // x ∈ Z[x][y]
+    let f = polynomial![y3, polynomial![], x.clone()]; // -y^3+xz^2 ∈ Z[x][y][z]
+    let g = polynomial![y2xy, polynomial![], x]; // -xy^2-y^3+xz^2 ∈ Z[x][y][z]
+    let r = f.resultant(g);
+    assert_eq!(r, Polynomial::from_monomial(Polynomial::from_monomial(1, 4), 4)); // x^4y^4
+    ```
+    */
+    pub fn resultant(mut self, other: Self) -> R
+    where
+        R: Sized
+            + Clone
+            + Zero
+            + One
+            + for<'x> AddAssign<&'x R>
+            + for<'x> MulAssign<&'x R>
+            + Neg<Output = R>,
+        for<'x> &'x R: Sub<Output = R> + Mul<Output = R> + Div<Output = R>,
+    {
+        let f_deg = self.deg();
+        let g_deg = other.deg();
+        match (f_deg, g_deg) {
+            (Some(0), Some(0)) => R::one(),
+            (Some(0), None) => R::one(),
+            (None, Some(0)) => R::one(),
+            (None, None) => R::zero(),
+            (None, Some(_)) => R::zero(),
+            (Some(_), None) => R::zero(),
+            (Some(0), Some(m)) => ring_algorithm::power::<R>(self.lc().unwrap().clone(), m as u64),
+            (Some(n), Some(0)) => ring_algorithm::power::<R>(other.lc().unwrap().clone(), n as u64),
+            (Some(n), Some(m)) => {
+                assert!(n >= 1);
+                assert!(m >= 1);
+                let (scale, _) = self.pseudo_division(&other);
+                if let Some(l) = self.deg() {
+                    let sign = if n * m % 2 == 0 { R::one() } else { -R::one() };
+                    let mul =
+                        ring_algorithm::power::<R>(other.lc().unwrap().clone(), (n - l) as u64);
+                    let div = ring_algorithm::power::<R>(scale, m as u64);
+                    &(other.resultant(self) * sign * mul) / &div
+                } else {
+                    // g | f, gcd(f, g) = g
+                    R::zero()
+                }
+            }
+        }
+    }
 }
 
 // field
