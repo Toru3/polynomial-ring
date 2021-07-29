@@ -11,8 +11,8 @@ let q = r.division(&g);
 assert_eq!(f, q * g + r);
 ```
 
-`Add`, `Sub`, `Mul`, `Div`, and `Rem` of polynomial is impremented.
-Derivative, square free, pseudo divison, and resultant is impremented.
+`Add`, `Sub`, `Mul`, `Div`, and `Rem` of polynomial is implemented.
+Derivative, square free, pseudo division, and resultant is implemented.
 
 # Licence
 MIT OR Apache-2.0
