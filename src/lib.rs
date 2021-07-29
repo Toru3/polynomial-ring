@@ -1,15 +1,4 @@
-/*! Polynomial ring $`R[x]`$
-
-```
-use num::Rational64;
-use polynomial_ring::Polynomial;
-let f = Polynomial::new(vec![3, 1, 4, 1, 5].into_iter().map(|x| Rational64::from_integer(x)).collect());
-let g = Polynomial::new(vec![2, 7, 1].into_iter().map(|x| Rational64::from_integer(x)).collect());
-let mut r = f.clone();
-let q = r.division(&g);
-assert_eq!(f, q * g + r);
-```
-*/
+#![doc = include_str!("../README.md")]
 #![cfg_attr(feature = "__internal_inject_debug", recursion_limit = "8")]
 mod sealed {
     pub trait SizedExt: std::marker::Sized + std::fmt::Debug + std::fmt::Display {}
