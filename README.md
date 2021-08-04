@@ -15,4 +15,4 @@ assert_eq!(f, q * g + r);
 Derivative, square free, pseudo division, and resultant is implemented.
 
 # Licence
-MIT OR Apache-2.0
+AGPL-3.0-or-later
