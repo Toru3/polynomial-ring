@@ -13,7 +13,7 @@ categories = ["data-structures", "algorithms", "mathematics"]
 
 [dependencies]
 num-traits = "0.2.11"
-ring-algorithm = "0.3.0"
+ring-algorithm = "0.4.0"
 [dev-dependencies]
 num = "0.4.0"
 auto_ops = "0.3.0"
