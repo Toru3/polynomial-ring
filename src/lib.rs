@@ -330,6 +330,7 @@ impl<R: Sized> Polynomial<R> {
     assert_eq!(p.derivative(), polynomial![2, 6, 6, 4]);
     ```
     */
+    #[must_use]
     pub fn derivative(self) -> Self
     where
         R: Sized + Clone + Zero + One + for<'x> AddAssign<&'x R> + Mul<Output = R>,
@@ -538,6 +539,7 @@ impl<K: Sized> Polynomial<K> {
     assert_eq!(f, q * g + r);
     ```
     */
+    #[allow(unknown_lints, clippy::return_self_not_must_use)]
     pub fn division(&mut self, other: &Self) -> Self
     where
         K: Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
@@ -572,6 +574,7 @@ impl<K: Sized> Polynomial<K> {
     assert_eq!(p.square_free(), &f * &g); // (x+1)(x^2+x+1)
     ```
     */
+    #[must_use]
     pub fn square_free(&self) -> Self
     where
         K: Sized
