@@ -9,9 +9,9 @@ mod sealed {
     pub use SizedExt as Sized;
 }
 use num_traits::{One, Zero};
-use ring_algorithm::RingNormalize;
+use ring_algorithm::{gcd, RingNormalize};
 use sealed::Sized;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
 mod ops;
 
 /** Polynomial ring $`R[x]`$
@@ -486,6 +486,35 @@ impl<R: Sized> Polynomial<R> {
                 }
             }
         }
+    }
+    /** calculate primitive part of input polynomial
+
+    divide polynomial by GCD of coefficents.
+    ```
+    use polynomial_ring::{polynomial, Polynomial};
+    use num_traits::{One, Zero};
+    let mut f = polynomial![2, 4, -2, 6]; // 2+4x+2x^2+6x^3 ∈ Z[x]
+    f.primitive_part_mut();
+    assert_eq!(f, polynomial![1, 2, -1, 3]);// 1+2x+x^2+3x^3 ∈ Z[x]
+    let mut g = polynomial![polynomial![1, 1], polynomial![1, 2, 1], polynomial![3, 4, 1], polynomial![-1, -1]]; // (1+x)+(1+2x+x^2)y+(3+4x+x^2)y^2+(-1-x)y^3 ∈ Z[x][y]
+    g.primitive_part_mut();
+    assert_eq!(g, polynomial![polynomial![1], polynomial![1, 1], polynomial![3, 1], polynomial![-1]]); // 1+(1+x)y+(3+x)y^2-y^3 ∈ Z[x][y]
+    ```
+    */
+    pub fn primitive_part_mut(&mut self)
+    where
+        R: Sized + Clone + Zero + for<'x> DivAssign<&'x R> + RingNormalize,
+        for<'x> &'x R: Rem<Output = R>,
+    {
+        if self.deg().is_none() {
+            return;
+        }
+        let mut g = self.coef[0].clone();
+        for c in &self.coef[1..] {
+            g = gcd::<R>(g, c.clone());
+        }
+        g.normalize_mut();
+        self.coef.iter_mut().for_each(|x| *x /= &g);
     }
 }
 
