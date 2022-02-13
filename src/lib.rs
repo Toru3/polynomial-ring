@@ -71,7 +71,7 @@ impl<T: crate::Sized> Polynomial<T> {
     let p = Polynomial::new(vec![3, 2, 1]); // 3+2x+x^2
     assert_eq!(p.coefs(), vec![3, 2, 1]);
     let q = Polynomial::new(vec![0]); // 0
-    assert_eq!(q.coefs(), vec![]);
+    assert_eq!(q.coefs(), Vec::<i32>::new());
     ```
     */
     pub fn coefs(self) -> Vec<T> {
