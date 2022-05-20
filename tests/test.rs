@@ -1,4 +1,6 @@
+use num_traits::{One, Zero};
 use polynomial_ring::*;
+use ring_algorithm::{extended_euclidian_algorithm, gcd, EuclideanRingOperation, RingNormalize};
 use std::fmt::{Debug, Display};
 
 fn make_q_x<T>(v: Vec<(T, T)>) -> Polynomial<num::rational::Ratio<T>>
@@ -157,4 +159,37 @@ fn scalar_div() {
     let q = make_q_x(vec![(3, 2), (2, 1), (5, 18)]);
     let two = num::rational::Ratio::new(2, 1);
     assert_eq!(p / two, q);
+}
+
+macro_rules! poly {
+    ($($x:expr),*) => {
+        Polynomial::new(vec![$(num::Rational64::from_integer($x)),*])
+    }
+}
+macro_rules! expand_poly {
+    ($([$($x:expr),*]),*) => {
+        vec![$(poly![$($x),*]),*].into_iter().product::<Polynomial<num::Rational64>>()
+    }
+}
+fn check_eea<T>(a: T, b: T) -> bool
+where
+    T: Display + Debug + Zero + One + Clone + Eq + RingNormalize,
+    for<'x> &'x T: EuclideanRingOperation<T>,
+{
+    let g = gcd::<T>(a.clone(), b.clone());
+    let (d, x, y) = extended_euclidian_algorithm::<T>(a.clone(), b.clone());
+    g.is_similar(&d) && &(&x * &a) + &(&y * &b) == d
+}
+#[test]
+fn test_eea2() {
+    type R = Polynomial<num::Rational64>;
+    let z = R::zero();
+    check_eea::<R>(z.clone(), z.clone());
+    let a = expand_poly![[2], [1, 1], [2, 1], [3, 1]];
+    let b = expand_poly![[3], [1, 1], [4, 1]];
+    let d = expand_poly![[4, 1], [5, 1]];
+    assert!(check_eea::<R>(a.clone(), z.clone()));
+    assert!(check_eea::<R>(z, a.clone()));
+    assert!(check_eea::<R>(a.clone(), b));
+    assert!(check_eea::<R>(a, d));
 }
