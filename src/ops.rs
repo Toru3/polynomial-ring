@@ -285,7 +285,7 @@ where
         self.division(other);
     }
 }
-impl<'a, K> RemAssign for Polynomial<K>
+impl<K> RemAssign for Polynomial<K>
 where
     K: Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
     for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
@@ -353,7 +353,7 @@ where
         self.scalar_mul_assign_impl(other);
     }
 }
-impl<'a, R> MulAssign<R> for Polynomial<R>
+impl<R> MulAssign<R> for Polynomial<R>
 where
     R: Sized + Zero + for<'x> MulAssign<&'x R>,
 {
@@ -414,7 +414,7 @@ where
         self.scalar_div_assign_impl(other);
     }
 }
-impl<'a, R> DivAssign<R> for Polynomial<R>
+impl<R> DivAssign<R> for Polynomial<R>
 where
     R: Sized + Zero + for<'x> DivAssign<&'x R>,
 {
