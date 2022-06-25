@@ -217,7 +217,12 @@ fn pseudo_division() {
     assert_eq!(polynomial![s] * f, q * g + r);
 
     // 1-yx-x^2+yx^3 ∈ Z[y][x]
-    let f = polynomial![polynomial![1], polynomial![0, -1], polynomial![-1], polynomial![0, 1]];
+    let f = polynomial![
+        polynomial![1],
+        polynomial![0, -1],
+        polynomial![-1],
+        polynomial![0, 1]
+    ];
     // -1+y^2x ∈ Z[y][x]
     let g = polynomial![polynomial![-1], polynomial![0, 0, 1]];
     let mut r = f.clone();
@@ -251,5 +256,8 @@ fn resultant() {
     let f = polynomial![y3, polynomial![], x.clone()]; // -y^3+xz^2 ∈ Z[x][y][z]
     let g = polynomial![y2xy, polynomial![], x]; // -xy^2-y^3+xz^2 ∈ Z[x][y][z]
     let r = f.resultant(g);
-    assert_eq!(r, Polynomial::from_monomial(Polynomial::from_monomial(1, 4), 4)); // x^4y^4
+    assert_eq!(
+        r,
+        Polynomial::from_monomial(Polynomial::from_monomial(1, 4), 4)
+    ); // x^4y^4
 }
