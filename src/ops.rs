@@ -344,6 +344,7 @@ where
 }
 
 // scalar ops
+
 // MulAssign
 impl<'a, R> MulAssign<&'a R> for Polynomial<R>
 where
@@ -405,6 +406,7 @@ where
         self
     }
 }
+
 // DivAssign
 impl<'a, R> DivAssign<&'a R> for Polynomial<R>
 where

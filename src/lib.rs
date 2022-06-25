@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(feature = "__internal_inject_debug", recursion_limit = "8")]
+
 mod sealed {
     pub trait SizedExt: std::marker::Sized + std::fmt::Debug + std::fmt::Display {}
     impl<T> SizedExt for T where T: std::marker::Sized + std::fmt::Debug + std::fmt::Display {}
@@ -30,11 +31,14 @@ assert_eq!(f, q * g + r);
 pub struct Polynomial<T> {
     coef: Vec<T>,
 }
+
 impl<T: crate::Sized> Polynomial<T> {
     fn len(&self) -> usize {
         self.coef.len()
     }
-    /** degree of polynomial
+
+    /** The degree of the polynomial.
+    This is the highest power, or [None] for the zero polynomial.
 
     ```
     use polynomial_ring::Polynomial;
@@ -51,7 +55,9 @@ impl<T: crate::Sized> Polynomial<T> {
             Some(self.len() - 1)
         }
     }
-    /** leading coefficent
+
+    /** The leading coefficent.
+    This is the coeffient of the highest power, or [None] for the zero polynomial.
 
     ```
     use polynomial_ring::Polynomial;
@@ -64,7 +70,8 @@ impl<T: crate::Sized> Polynomial<T> {
     pub fn lc(&self) -> Option<&T> {
         self.deg().map(|d| &self.coef[d])
     }
-    /** get coefficents
+
+    /** Get the coefficents.
 
     ```
     use polynomial_ring::Polynomial;
@@ -115,6 +122,7 @@ where
         iter.fold(Self::zero(), Add::add)
     }
 }
+
 impl<M: crate::Sized + Zero> Polynomial<M> {
     fn trim_zero(&mut self) {
         let len = self
@@ -125,7 +133,8 @@ impl<M: crate::Sized + Zero> Polynomial<M> {
             .unwrap_or(0);
         self.coef.truncate(len);
     }
-    /** construct polynomial
+
+    /** Construct a polynomial from a [Vec] of coefficients.
 
     ```
     use polynomial_ring::Polynomial;
@@ -138,12 +147,14 @@ impl<M: crate::Sized + Zero> Polynomial<M> {
         poly.trim_zero();
         poly
     }
+
     fn extend(&mut self, len: usize) {
         if self.len() < len {
             self.coef.resize_with(len, M::zero);
         }
     }
-    /** construct polynomial from monomial $`cx^d`$ ($`c`$=coefficent, $`d`$=degree)
+
+    /** Construct a monomial $`cx^d`$ from a coefficient and a degree ($`c`$=coefficent, $`d`$=degree).
 
     ```
     use polynomial_ring::Polynomial;
@@ -166,8 +177,9 @@ impl<M: crate::Sized + Zero> Polynomial<M> {
         Self { coef }
     }
 }
+
 #[macro_export]
-/** make Polynomial (like `vec!`)
+/** Make a [Polynomial] from a list of coefficients (like `vec!`).
 
 ```
 use polynomial_ring::{Polynomial, polynomial};
@@ -262,6 +274,7 @@ where
         iter.fold(Self::one(), Mul::mul)
     }
 }
+
 impl<R> std::fmt::Display for Polynomial<R>
 where
     R: std::cmp::Eq + std::fmt::Display + Zero + One,
@@ -279,7 +292,7 @@ where
             if is_first {
                 is_first = false;
             } else {
-                write!(f, "+")?
+                write!(f, "+")?;
             }
             if c.is_one() {
                 match i {
@@ -298,8 +311,9 @@ where
         Ok(())
     }
 }
+
 impl<R: Sized> Polynomial<R> {
-    /** evaluate polynomial by Horner's method
+    /** Evaluate a polynomial at some point, using Horner's method.
 
     ```
     use polynomial_ring::Polynomial;
@@ -322,12 +336,13 @@ impl<R: Sized> Polynomial<R> {
         }
         sum
     }
-    /** derivative
+
+    /** Calculate the derivative.
 
     ```
     use polynomial_ring::{Polynomial, polynomial};
     let p = polynomial![1, 2, 3, 2, 1]; // 1+2x+3x^2+2x^3+x^4
-    assert_eq!(p.derivative(), polynomial![2, 6, 6, 4]);
+    assert_eq!(p.derivative(), polynomial![2, 6, 6, 4]); // 2+6x+6x^2+4x^3
     ```
     */
     #[must_use]
@@ -346,6 +361,7 @@ impl<R: Sized> Polynomial<R> {
         }
         Polynomial::new(coef)
     }
+
     fn scalar_mul_assign_impl(&mut self, alpha: &R)
     where
         R: Sized + Zero + for<'x> MulAssign<&'x R>,
@@ -353,35 +369,18 @@ impl<R: Sized> Polynomial<R> {
         self.coef.iter_mut().for_each(|c| *c *= alpha);
         self.trim_zero();
     }
-    /** pseudo division
+
+    /** Pseudo division.
 
     Let $`R`$ be an [integral domain](https://en.wikipedia.org/wiki/Integral_domain).
     Let $`f, g \in R[x]`$, where $`g \neq 0`$.
-    This function calculate $`s \in R`$, $`q, r \in R[x]`$ s.t. $`sf=qg+r`$,
+    This function calculates $`s \in R`$, $`q, r \in R[x]`$ s.t. $`sf=qg+r`$,
     where $`r=0`$ or $`\deg(r)<\deg(g)`$.
     ```
     use polynomial_ring::{polynomial, Polynomial};
+
     let f = polynomial![1, 3, 1]; // 1+3x+x^2 ∈ Z[x]
     let g = polynomial![5, 2]; // 5+2x ∈ Z[x]
-    let mut r = f.clone();
-    let (s, q) = r.pseudo_division(&g);
-    assert_eq!(f * s, q * g + r);
-    let f = polynomial![1, -1, -1, 1]; // 1-x-x^2+x^3 ∈ Z[x]
-    let g = polynomial![1, 2]; // 1+2x ∈ Z[x]
-    let mut r = f.clone();
-    let (s, q) = r.pseudo_division(&g);
-    assert_eq!(polynomial![s] * f, q * g + r);
-    // 1-yx-x^2+yx^3 ∈ Z[y][x]
-    let f = polynomial![polynomial![1], polynomial![0, -1], polynomial![-1], polynomial![0, 1]];
-    // -1+y^2x ∈ Z[y][x]
-    let g = polynomial![polynomial![-1], polynomial![0, 0, 1]];
-    let mut r = f.clone();
-    let (s, q) = r.pseudo_division(&g);
-    assert_eq!(f * s, q * g + r);
-    // x^3 ∈ Z[y][x]
-    let f = polynomial![polynomial![], polynomial![], polynomial![], polynomial![1]];
-    // yx ∈ Z[y][x]
-    let g = polynomial![polynomial![], polynomial![0, 1]];
     let mut r = f.clone();
     let (s, q) = r.pseudo_division(&g);
     assert_eq!(f * s, q * g + r);
@@ -422,30 +421,16 @@ impl<R: Sized> Polynomial<R> {
         }
         (scale, Self { coef })
     }
-    /** calculate [resultant](https://en.wikipedia.org/wiki/Resultant)
+
+    /** Calculate the [resultant](https://en.wikipedia.org/wiki/Resultant)
 
     ```
     use polynomial_ring::{polynomial, Polynomial};
-    use num_traits::{One, Zero};
+
     let f = polynomial![0, 2, 0, 1]; // 2x+x^3 ∈ Z[x]
     let g = polynomial![2, 3, 5]; // 2+3x+5x^2 ∈ Z[x]
     let r = f.resultant(g);
     assert_eq!(r, 164);
-    let f = polynomial![-4, 0, 0, 0, 1]; // -4+x^4 ∈ Z[x]
-    let g = polynomial![0, 2, 0, 1]; // 2x+x^3 ∈ Z[x]
-    let r = f.resultant(g); // deg(gcd(f, g)) = deg(x^2-2) = 2 ≠ 0
-    assert_eq!(r, 0);
-    let f = polynomial![polynomial![1], polynomial![0], polynomial![1]]; // 1+x^2 ∈ Z[y][x]
-    let g = polynomial![polynomial![1], polynomial![1, 2]]; // 1+(1+2y)x ∈ Z[y][x]
-    let r = f.resultant(g);
-    assert_eq!(r, polynomial![2, 4, 4]); // 2+4y+4y^2
-    let y3 = Polynomial::from_monomial(polynomial![-1], 3); // -y^3 ∈ Z[x][y]
-    let y2xy = Polynomial::from_monomial(polynomial![0, -1], 2) + &y3; // -xy^2-y^3 ∈ Z[x][y]
-    let x = polynomial![polynomial![0, 1]]; // x ∈ Z[x][y]
-    let f = polynomial![y3, polynomial![], x.clone()]; // -y^3+xz^2 ∈ Z[x][y][z]
-    let g = polynomial![y2xy, polynomial![], x]; // -xy^2-y^3+xz^2 ∈ Z[x][y][z]
-    let r = f.resultant(g);
-    assert_eq!(r, Polynomial::from_monomial(Polynomial::from_monomial(1, 4), 4)); // x^4y^4
     ```
     */
     pub fn resultant(mut self, other: Self) -> R
@@ -487,9 +472,9 @@ impl<R: Sized> Polynomial<R> {
             }
         }
     }
-    /** calculate primitive part of input polynomial
 
-    divide polynomial by GCD of coefficents.
+    /** Calculate the primitive part of the input polynomial,
+    that is divide the polynomial by the GCD of its coefficents.
     ```
     use polynomial_ring::{polynomial, Polynomial};
     use num_traits::{One, Zero};
@@ -536,7 +521,7 @@ where
     }
 }
 impl<K: Sized> Polynomial<K> {
-    /** make polynomial monic
+    /** Make the polynomial monic, that is divide it by its leading coefficient.
 
     ```
     use num::Rational64;
@@ -556,7 +541,8 @@ impl<K: Sized> Polynomial<K> {
             self.coef.iter_mut().for_each(|v| *v /= &lc);
         }
     }
-    /** polynomial division
+
+    /** Polynomial division.
 
     ```
     use num::Rational64;
@@ -592,7 +578,8 @@ impl<K: Sized> Polynomial<K> {
         }
         Self { coef }
     }
-    /** calculate [square-free polynomial](https://en.wikipedia.org/wiki/Square-free_polynomial)
+
+    /** Calculate the [square-free decomposition](https://en.wikipedia.org/wiki/Square-free_polynomial).
 
     ```
     use polynomial_ring::{Polynomial, polynomial};
@@ -620,6 +607,7 @@ impl<K: Sized> Polynomial<K> {
         let f = ring_algorithm::gcd::<Self>(self.clone(), d).into_normalize();
         (self / &f).into_normalize()
     }
+
     fn scalar_div_assign_impl(&mut self, alpha: &K)
     where
         K: Sized + Zero + for<'x> DivAssign<&'x K>,
