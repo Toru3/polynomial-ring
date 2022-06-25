@@ -29,12 +29,14 @@ fn add() {
     let q = polynomial![3, -1, 1];
     assert_eq!(p + q, polynomial![0, 0, 5]);
 }
+
 #[test]
 fn add2() {
     let p = make_q_x(vec![(3, 1), (4, 1), (5, 9), (2, 6)]);
     let q = make_q_x(vec![(2, 7), (1, 8), (2, 8)]);
     assert_eq!(p + q, make_q_x(vec![(23, 7), (33, 8), (58, 72), (2, 6)]));
 }
+
 #[test]
 fn sum() {
     type R = Polynomial<num::Rational64>;
@@ -50,11 +52,13 @@ fn sum() {
         make_q_x(vec![(31, 32), (9, 15), (1, 9)])
     );
 }
+
 #[test]
 fn neg() {
     let p = polynomial![1, 4, 1, 4, 1, 3, 5, 6];
     assert_eq!(-p, polynomial![-1, -4, -1, -4, -1, -3, -5, -6]);
 }
+
 #[test]
 fn sub() {
     let p = polynomial![1, 4, 1, 4, 1, 3, 5, 6];
@@ -70,12 +74,14 @@ fn sub() {
     let q = polynomial![3, 1, 1];
     assert_eq!(p - q, polynomial![0, 0, 3]);
 }
+
 #[test]
 fn sub2() {
     let p = make_q_x(vec![(3, 1), (4, 1), (5, 9)]);
     let q = make_q_x(vec![(2, 7), (1, 8), (2, 8), (1, 1)]);
     assert_eq!(p - q, make_q_x(vec![(19, 7), (31, 8), (22, 72), (-1, 1)]));
 }
+
 #[test]
 fn mul() {
     let p = polynomial![1, 2, 3];
@@ -121,6 +127,7 @@ mod residue_class {
         }
     }
 }
+
 #[test]
 fn mul2() {
     use residue_class::ResidueClass6;
@@ -129,6 +136,7 @@ fn mul2() {
     let r = polynomial![ResidueClass6::new(2), ResidueClass6::new(1)];
     assert_eq!(p * q, r);
 }
+
 #[test]
 fn product() {
     type R = Polynomial<i64>;
@@ -142,17 +150,20 @@ fn product() {
     let p = v.into_iter().product::<R>();
     assert_eq!(p, polynomial![0, 4, 0, -5, 0, 1]);
 }
+
 #[test]
 fn display() {
     assert_eq!(polynomial![0].to_string(), "0");
     assert_eq!(polynomial![3, 2, 1].to_string(), "x^2+2*x+3");
     assert_eq!(polynomial![0, -2, -1, 3].to_string(), "3*x^3+-1*x^2+-2*x");
 }
+
 #[test]
 fn scalar_mul() {
     let p = polynomial![1, 4, 1, 4, 1, 3, 5, 6];
     assert_eq!(p * 2, polynomial![2, 8, 2, 8, 2, 6, 10, 12]);
 }
+
 #[test]
 fn scalar_div() {
     let p = make_q_x(vec![(3, 1), (4, 1), (5, 9)]);
@@ -166,11 +177,13 @@ macro_rules! poly {
         Polynomial::new(vec![$(num::Rational64::from_integer($x)),*])
     }
 }
+
 macro_rules! expand_poly {
     ($([$($x:expr),*]),*) => {
         vec![$(poly![$($x),*]),*].into_iter().product::<Polynomial<num::Rational64>>()
     }
 }
+
 fn check_eea<T>(a: T, b: T) -> bool
 where
     T: Display + Debug + Zero + One + Clone + Eq + RingNormalize,
@@ -180,6 +193,7 @@ where
     let (d, x, y) = extended_euclidian_algorithm::<T>(a.clone(), b.clone());
     g.is_similar(&d) && &(&x * &a) + &(&y * &b) == d
 }
+
 #[test]
 fn test_eea2() {
     type R = Polynomial<num::Rational64>;
@@ -192,4 +206,50 @@ fn test_eea2() {
     assert!(check_eea::<R>(z, a.clone()));
     assert!(check_eea::<R>(a.clone(), b));
     assert!(check_eea::<R>(a, d));
+}
+
+#[test]
+fn pseudo_division() {
+    let f = polynomial![1, -1, -1, 1]; // 1-x-x^2+x^3 ∈ Z[x]
+    let g = polynomial![1, 2]; // 1+2x ∈ Z[x]
+    let mut r = f.clone();
+    let (s, q) = r.pseudo_division(&g);
+    assert_eq!(polynomial![s] * f, q * g + r);
+
+    // 1-yx-x^2+yx^3 ∈ Z[y][x]
+    let f = polynomial![polynomial![1], polynomial![0, -1], polynomial![-1], polynomial![0, 1]];
+    // -1+y^2x ∈ Z[y][x]
+    let g = polynomial![polynomial![-1], polynomial![0, 0, 1]];
+    let mut r = f.clone();
+    let (s, q) = r.pseudo_division(&g);
+    assert_eq!(f * s, q * g + r);
+
+    // x^3 ∈ Z[y][x]
+    let f = polynomial![polynomial![], polynomial![], polynomial![], polynomial![1]];
+    // yx ∈ Z[y][x]
+    let g = polynomial![polynomial![], polynomial![0, 1]];
+    let mut r = f.clone();
+    let (s, q) = r.pseudo_division(&g);
+    assert_eq!(f * s, q * g + r);
+}
+
+#[test]
+fn resultant() {
+    let f = polynomial![-4, 0, 0, 0, 1]; // -4+x^4 ∈ Z[x]
+    let g = polynomial![0, 2, 0, 1]; // 2x+x^3 ∈ Z[x]
+    let r = f.resultant(g); // deg(gcd(f, g)) = deg(x^2-2) = 2 ≠ 0
+    assert_eq!(r, 0);
+
+    let f = polynomial![polynomial![1], polynomial![0], polynomial![1]]; // 1+x^2 ∈ Z[y][x]
+    let g = polynomial![polynomial![1], polynomial![1, 2]]; // 1+(1+2y)x ∈ Z[y][x]
+    let r = f.resultant(g);
+    assert_eq!(r, polynomial![2, 4, 4]); // 2+4y+4y^2
+
+    let y3 = Polynomial::from_monomial(polynomial![-1], 3); // -y^3 ∈ Z[x][y]
+    let y2xy = Polynomial::from_monomial(polynomial![0, -1], 2) + &y3; // -xy^2-y^3 ∈ Z[x][y]
+    let x = polynomial![polynomial![0, 1]]; // x ∈ Z[x][y]
+    let f = polynomial![y3, polynomial![], x.clone()]; // -y^3+xz^2 ∈ Z[x][y][z]
+    let g = polynomial![y2xy, polynomial![], x]; // -xy^2-y^3+xz^2 ∈ Z[x][y][z]
+    let r = f.resultant(g);
+    assert_eq!(r, Polynomial::from_monomial(Polynomial::from_monomial(1, 4), 4)); // x^4y^4
 }

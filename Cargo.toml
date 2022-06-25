@@ -14,12 +14,15 @@ categories = ["data-structures", "algorithms", "mathematics"]
 [dependencies]
 num-traits = "0.2.11"
 ring-algorithm = "0.4.4"
+
 [dev-dependencies]
 num = "0.4.0"
 auto_ops = "0.3.0"
+
 [features]
 default = []
 __internal_inject_debug = [] # DO NOT USE
+
 [package.metadata.docs.rs]
 rustdoc-args = [
     "--html-in-header",
