@@ -7,15 +7,23 @@ use std::ops::{
 // AddAssign
 impl<'a, M> AddAssign<&'a Polynomial<M>> for Polynomial<M>
 where
-    M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     fn add_assign(&mut self, other: &Self) {
-        self.add_assign_ref(other);
+        let len = self.len();
+        self.extend(other.len());
+        self.coef
+            .iter_mut()
+            .zip(other.coef.iter())
+            .for_each(|(l, r)| *l += r);
+        if len == other.len() {
+            self.trim_zero()
+        }
     }
 }
 impl<M> AddAssign for Polynomial<M>
 where
-    M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     fn add_assign(&mut self, other: Self) {
         *self += &other
@@ -47,7 +55,7 @@ where
 }
 impl<'a, M> Add<&'a Polynomial<M>> for Polynomial<M>
 where
-    M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     type Output = Self;
     fn add(mut self, other: &Self) -> Self::Output {
@@ -57,7 +65,7 @@ where
 }
 impl<M> Add for Polynomial<M>
 where
-    M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     type Output = Self;
     fn add(mut self, other: Polynomial<M>) -> Self::Output {
@@ -73,7 +81,9 @@ where
 {
     type Output = Self;
     fn neg(self) -> Self::Output {
-        self.neg_impl()
+        Polynomial {
+            coef: self.coef.into_iter().map(|v| -v).collect(),
+        }
     }
 }
 impl<'a, G> Neg for &'a Polynomial<G>
@@ -83,22 +93,32 @@ where
 {
     type Output = Polynomial<G>;
     fn neg(self) -> Self::Output {
-        self.neg_ref()
+        Polynomial {
+            coef: self.coef.iter().map(|v| -v).collect(),
+        }
     }
 }
 
 // SubAssign
 impl<'a, G> SubAssign<&'a Polynomial<G>> for Polynomial<G>
 where
-    G: Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
+    G: Sized + Zero + for<'x> SubAssign<&'x G>,
 {
     fn sub_assign(&mut self, other: &Self) {
-        self.sub_assign_ref(other)
+        let len = self.len();
+        self.extend(other.len());
+        self.coef
+            .iter_mut()
+            .zip(other.coef.iter())
+            .for_each(|(l, r)| *l -= r);
+        if len == other.len() {
+            self.trim_zero()
+        }
     }
 }
 impl<G> SubAssign for Polynomial<G>
 where
-    G: Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
+    G: Sized + Zero + for<'x> SubAssign<&'x G>,
 {
     fn sub_assign(&mut self, other: Self) {
         *self -= &other
@@ -130,7 +150,7 @@ where
 }
 impl<'a, G> Sub<&'a Polynomial<G>> for Polynomial<G>
 where
-    G: Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
+    G: Sized + Zero + for<'x> SubAssign<&'x G>,
 {
     type Output = Self;
     fn sub(mut self, other: &Self) -> Self::Output {
@@ -140,7 +160,7 @@ where
 }
 impl<G> Sub for Polynomial<G>
 where
-    G: Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
+    G: Sized + Zero + for<'x> SubAssign<&'x G>,
 {
     type Output = Self;
     fn sub(mut self, other: Polynomial<G>) -> Self::Output {
