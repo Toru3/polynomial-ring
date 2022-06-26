@@ -397,7 +397,7 @@ impl<R: Sized> Polynomial<R> {
             return (R::one(), Self::zero());
         }
         let f_deg = f_deg.unwrap();
-        assert!(f_deg >= g_deg);
+        debug_assert!(f_deg >= g_deg);
         let k = f_deg - g_deg + 1;
         let lc = other.lc().unwrap();
         let mut coef = vec![R::zero(); k];
@@ -456,8 +456,8 @@ impl<R: Sized> Polynomial<R> {
             (Some(0), Some(m)) => ring_algorithm::power::<R>(self.lc().unwrap().clone(), m as u64),
             (Some(n), Some(0)) => ring_algorithm::power::<R>(other.lc().unwrap().clone(), n as u64),
             (Some(n), Some(m)) => {
-                assert!(n >= 1);
-                assert!(m >= 1);
+                debug_assert!(n >= 1);
+                debug_assert!(m >= 1);
                 let (scale, _) = self.pseudo_division(&other);
                 if let Some(l) = self.deg() {
                     let sign = if n * m % 2 == 0 { R::one() } else { -R::one() };
