@@ -3,7 +3,7 @@ name = "polynomial-ring"
 version = "0.4.4"
 authors = ["Toru3 <ryuutet@gmail.com>"]
 edition = "2018"
-description = "polynomial on field"
+description = "A polynomial implementation"
 license = "AGPL-3.0-or-later"
 documentation = "https://docs.rs/polynomial-ring/"
 repository = "https://gitlab.com/Toru3/polynomial-ring"
@@ -13,7 +13,7 @@ categories = ["data-structures", "algorithms", "mathematics"]
 
 [dependencies]
 num-traits = "0.2.11"
-ring-algorithm = "0.4.4"
+ring-algorithm = { version = "0.4.4", default-features = false }
 
 [dev-dependencies]
 num = "0.4.0"
