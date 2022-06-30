@@ -88,6 +88,22 @@ impl<T: crate::Sized> Polynomial<T> {
 }
 
 // additive monoid
+impl<M> Polynomial<M> {
+    fn add_assign_ref(&mut self, other: &Self)
+    where
+        M: Sized + Zero + for<'x> AddAssign<&'x M>,
+    {
+        let len = self.len();
+        self.extend(other.len());
+        self.coef
+            .iter_mut()
+            .zip(other.coef.iter())
+            .for_each(|(l, r)| *l += r);
+        if len == other.len() {
+            self.trim_zero()
+        }
+    }
+}
 impl<M> Zero for Polynomial<M>
 where
     M: Sized + Zero + for<'x> AddAssign<&'x M>,
@@ -176,6 +192,41 @@ assert_eq!(p, q);
 macro_rules! polynomial {
     ($($x:expr),*) => {
         Polynomial::new(vec![$($x), *])
+    }
+}
+
+// additive group
+impl<G> Polynomial<G> {
+    fn neg_impl(self) -> Self
+    where
+        G: Sized + Neg<Output = G>,
+    {
+        Polynomial {
+            coef: self.coef.into_iter().map(|v| -v).collect(),
+        }
+    }
+    fn neg_ref(&self) -> Self
+    where
+        G: Sized,
+        for<'x> &'x G: Neg<Output = G>,
+    {
+        Polynomial {
+            coef: self.coef.iter().map(|v| -v).collect(),
+        }
+    }
+    fn sub_assign_ref(&mut self, other: &Self)
+    where
+        G: Sized + Zero + for<'x> SubAssign<&'x G>,
+    {
+        let len = self.len();
+        self.extend(other.len());
+        self.coef
+            .iter_mut()
+            .zip(other.coef.iter())
+            .for_each(|(l, r)| *l -= r);
+        if len == other.len() {
+            self.trim_zero()
+        }
     }
 }
 

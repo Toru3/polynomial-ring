@@ -10,15 +10,7 @@ where
     M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     fn add_assign(&mut self, other: &Self) {
-        let len = self.len();
-        self.extend(other.len());
-        self.coef
-            .iter_mut()
-            .zip(other.coef.iter())
-            .for_each(|(l, r)| *l += r);
-        if len == other.len() {
-            self.trim_zero()
-        }
+        self.add_assign_ref(other)
     }
 }
 impl<M> AddAssign for Polynomial<M>
@@ -81,9 +73,7 @@ where
 {
     type Output = Self;
     fn neg(self) -> Self::Output {
-        Polynomial {
-            coef: self.coef.into_iter().map(|v| -v).collect(),
-        }
+        self.neg_impl()
     }
 }
 impl<'a, G> Neg for &'a Polynomial<G>
@@ -93,9 +83,7 @@ where
 {
     type Output = Polynomial<G>;
     fn neg(self) -> Self::Output {
-        Polynomial {
-            coef: self.coef.iter().map(|v| -v).collect(),
-        }
+        self.neg_ref()
     }
 }
 
@@ -105,15 +93,7 @@ where
     G: Sized + Zero + for<'x> SubAssign<&'x G>,
 {
     fn sub_assign(&mut self, other: &Self) {
-        let len = self.len();
-        self.extend(other.len());
-        self.coef
-            .iter_mut()
-            .zip(other.coef.iter())
-            .for_each(|(l, r)| *l -= r);
-        if len == other.len() {
-            self.trim_zero()
-        }
+        self.sub_assign_ref(other)
     }
 }
 impl<G> SubAssign for Polynomial<G>
