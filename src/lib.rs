@@ -12,6 +12,7 @@ mod sealed {
 use num_traits::{One, Zero};
 use ring_algorithm::{gcd, RingNormalize};
 use sealed::Sized;
+use std::fmt;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
 mod ops;
 
@@ -90,7 +91,7 @@ impl<T: crate::Sized> Polynomial<T> {
 impl<M> Polynomial<M> {
     fn add_assign_ref(&mut self, other: &Self)
     where
-        M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+        M: Sized + Zero + for<'x> AddAssign<&'x M>,
     {
         let len = self.len();
         self.extend(other.len());
@@ -105,7 +106,7 @@ impl<M> Polynomial<M> {
 }
 impl<M> Zero for Polynomial<M>
 where
-    M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     fn zero() -> Self {
         Self { coef: Vec::new() }
@@ -116,7 +117,7 @@ where
 }
 impl<M> std::iter::Sum for Polynomial<M>
 where
-    M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(Self::zero(), Add::add)
@@ -215,7 +216,7 @@ impl<G> Polynomial<G> {
     }
     fn sub_assign_ref(&mut self, other: &Self)
     where
-        G: Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
+        G: Sized + Zero + for<'x> SubAssign<&'x G>,
     {
         let len = self.len();
         self.extend(other.len());
@@ -232,7 +233,7 @@ impl<G> Polynomial<G> {
 // unitary ring
 fn mul_aux<R>(sum: &mut [R], coef: &R, vec: &[R])
 where
-    R: Sized + Clone + Zero + for<'x> AddAssign<&'x R>,
+    R: Sized + for<'x> AddAssign<&'x R>,
     for<'x> &'x R: Mul<Output = R>,
 {
     sum.iter_mut()
@@ -275,11 +276,11 @@ where
     }
 }
 
-impl<R> std::fmt::Display for Polynomial<R>
+impl<R> fmt::Display for Polynomial<R>
 where
-    R: std::cmp::Eq + std::fmt::Display + Zero + One,
+    R: PartialEq + fmt::Display + Zero + One,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let vec = &self.coef;
         if vec.is_empty() {
             return write!(f, "0");
@@ -324,15 +325,12 @@ impl<R: Sized> Polynomial<R> {
     */
     pub fn eval<'a>(&self, x: &'a R) -> R
     where
-        R: Sized + Clone + Zero + for<'x> AddAssign<&'x R> + MulAssign<&'a R>,
+        R: Sized + Zero + for<'x> AddAssign<&'x R> + MulAssign<&'a R>,
     {
-        if self.coef.is_empty() {
-            return R::zero();
-        }
-        let mut sum = self.lc().unwrap().clone();
-        for i in (0..self.len() - 1).rev() {
+        let mut sum = R::zero();
+        for coeff in self.coef.iter().rev() {
             sum *= x;
-            sum += &self.coef[i];
+            sum += coeff;
         }
         sum
     }
@@ -348,7 +346,7 @@ impl<R: Sized> Polynomial<R> {
     #[must_use]
     pub fn derivative(self) -> Self
     where
-        R: Sized + Clone + Zero + One + for<'x> AddAssign<&'x R> + Mul<Output = R>,
+        R: Sized + Zero + One + for<'x> AddAssign<&'x R> + Mul<Output = R>,
         for<'x> &'x R: Mul<Output = R>,
     {
         let n = self.coef.len();

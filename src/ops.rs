@@ -7,15 +7,15 @@ use std::ops::{
 // AddAssign
 impl<'a, M> AddAssign<&'a Polynomial<M>> for Polynomial<M>
 where
-    M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     fn add_assign(&mut self, other: &Self) {
-        self.add_assign_ref(other);
+        self.add_assign_ref(other)
     }
 }
 impl<M> AddAssign for Polynomial<M>
 where
-    M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     fn add_assign(&mut self, other: Self) {
         *self += &other
@@ -47,7 +47,7 @@ where
 }
 impl<'a, M> Add<&'a Polynomial<M>> for Polynomial<M>
 where
-    M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     type Output = Self;
     fn add(mut self, other: &Self) -> Self::Output {
@@ -57,7 +57,7 @@ where
 }
 impl<M> Add for Polynomial<M>
 where
-    M: Sized + Clone + Zero + for<'x> AddAssign<&'x M>,
+    M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     type Output = Self;
     fn add(mut self, other: Polynomial<M>) -> Self::Output {
@@ -90,7 +90,7 @@ where
 // SubAssign
 impl<'a, G> SubAssign<&'a Polynomial<G>> for Polynomial<G>
 where
-    G: Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
+    G: Sized + Zero + for<'x> SubAssign<&'x G>,
 {
     fn sub_assign(&mut self, other: &Self) {
         self.sub_assign_ref(other)
@@ -98,7 +98,7 @@ where
 }
 impl<G> SubAssign for Polynomial<G>
 where
-    G: Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
+    G: Sized + Zero + for<'x> SubAssign<&'x G>,
 {
     fn sub_assign(&mut self, other: Self) {
         *self -= &other
@@ -130,7 +130,7 @@ where
 }
 impl<'a, G> Sub<&'a Polynomial<G>> for Polynomial<G>
 where
-    G: Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
+    G: Sized + Zero + for<'x> SubAssign<&'x G>,
 {
     type Output = Self;
     fn sub(mut self, other: &Self) -> Self::Output {
@@ -140,7 +140,7 @@ where
 }
 impl<G> Sub for Polynomial<G>
 where
-    G: Sized + Clone + Zero + for<'x> SubAssign<&'x G>,
+    G: Sized + Zero + for<'x> SubAssign<&'x G>,
 {
     type Output = Self;
     fn sub(mut self, other: Polynomial<G>) -> Self::Output {
