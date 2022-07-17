@@ -13,7 +13,7 @@ use num_traits::{One, Zero};
 use ring_algorithm::{gcd, RingNormalize};
 use sealed::Sized;
 use std::fmt;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
+use std::ops::{AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
 mod ops;
 
 /** Polynomial ring $`R[x]`$
@@ -88,26 +88,6 @@ impl<T: crate::Sized> Polynomial<T> {
 }
 
 // additive monoid
-impl<M> Zero for Polynomial<M>
-where
-    M: Sized + Zero + for<'x> AddAssign<&'x M>,
-{
-    fn zero() -> Self {
-        Self { coef: Vec::new() }
-    }
-    fn is_zero(&self) -> bool {
-        self.deg().is_none()
-    }
-}
-impl<M> std::iter::Sum for Polynomial<M>
-where
-    M: Sized + Zero + for<'x> AddAssign<&'x M>,
-{
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.fold(Self::zero(), Add::add)
-    }
-}
-
 impl<M: crate::Sized + Zero> Polynomial<M> {
     fn trim_zero(&mut self) {
         let len = self
@@ -180,25 +160,6 @@ macro_rules! polynomial {
 }
 
 // unitary ring
-impl<R> One for Polynomial<R>
-where
-    R: Sized + Clone + Zero + for<'x> AddAssign<&'x R> + One,
-    for<'x> &'x R: Mul<Output = R>,
-{
-    fn one() -> Self {
-        polynomial![R::one()]
-    }
-}
-impl<R> std::iter::Product for Polynomial<R>
-where
-    R: Sized + Clone + Zero + for<'x> AddAssign<&'x R> + One,
-    for<'x> &'x R: Mul<Output = R>,
-{
-    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.fold(Self::one(), Mul::mul)
-    }
-}
-
 impl<R> fmt::Display for Polynomial<R>
 where
     R: PartialEq + fmt::Display + Zero + One,
@@ -417,22 +378,6 @@ impl<R: Sized> Polynomial<R> {
 }
 
 // field
-impl<K> RingNormalize for Polynomial<K>
-where
-    K: Sized + Clone + Zero + One + for<'x> AddAssign<&'x K> + for<'x> DivAssign<&'x K>,
-    for<'x> &'x K: Mul<Output = K>,
-{
-    fn leading_unit(&self) -> Self {
-        if let Some(x) = self.lc() {
-            Self::from_monomial(x.clone(), 0)
-        } else {
-            Self::one()
-        }
-    }
-    fn normalize_mut(&mut self) {
-        self.monic();
-    }
-}
 impl<K: Sized> Polynomial<K> {
     /** Make the polynomial monic, that is divide it by its leading coefficient.
 

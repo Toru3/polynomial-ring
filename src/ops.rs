@@ -1,9 +1,32 @@
-use crate::{Polynomial, Sized};
+use crate::{polynomial, Polynomial, Sized};
 use auto_impl_ops::auto_ops;
-use num_traits::Zero;
-use std::ops::{
-    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
+use num_traits::{One, Zero};
+use ring_algorithm::RingNormalize;
+use std::{
+    iter::{Product, Sum},
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign},
 };
+
+// additive monoid
+impl<M> Zero for Polynomial<M>
+where
+    M: Sized + Zero + for<'x> AddAssign<&'x M>,
+{
+    fn zero() -> Self {
+        Self { coef: Vec::new() }
+    }
+    fn is_zero(&self) -> bool {
+        self.deg().is_none()
+    }
+}
+impl<M> Sum for Polynomial<M>
+where
+    M: Sized + Zero + for<'x> AddAssign<&'x M>,
+{
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::zero(), Add::add)
+    }
+}
 
 #[auto_ops]
 impl<M> AddAssign<&Polynomial<M>> for Polynomial<M>
@@ -23,6 +46,7 @@ where
     }
 }
 
+// additive group
 // Neg
 impl<G> Neg for Polynomial<G>
 where
@@ -66,6 +90,26 @@ where
     }
 }
 
+// unitary ring
+impl<R> One for Polynomial<R>
+where
+    R: Sized + Clone + Zero + for<'x> AddAssign<&'x R> + One,
+    for<'x> &'x R: Mul<Output = R>,
+{
+    fn one() -> Self {
+        polynomial![R::one()]
+    }
+}
+impl<R> Product for Polynomial<R>
+where
+    R: Sized + Clone + Zero + for<'x> AddAssign<&'x R> + One,
+    for<'x> &'x R: Mul<Output = R>,
+{
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::one(), Mul::mul)
+    }
+}
+
 fn mul_aux<R>(sum: &mut [R], coef: &R, vec: &[R])
 where
     R: Sized + for<'x> AddAssign<&'x R>,
@@ -84,7 +128,7 @@ where
     type Output = Polynomial<R>;
     fn mul(self, other: Self) -> Self::Output {
         if self.is_zero() || other.is_zero() {
-            return Self::zero();
+            return Polynomial::<R>::zero();
         }
         let mut coef = vec![R::zero(); self.len() + other.len() - 1];
         self.coef
@@ -95,6 +139,23 @@ where
     }
 }
 
+// field
+impl<K> RingNormalize for Polynomial<K>
+where
+    K: Sized + Clone + Zero + One + for<'x> AddAssign<&'x K> + for<'x> DivAssign<&'x K>,
+    for<'x> &'x K: Mul<Output = K>,
+{
+    fn leading_unit(&self) -> Self {
+        if let Some(x) = self.lc() {
+            Self::from_monomial(x.clone(), 0)
+        } else {
+            Self::one()
+        }
+    }
+    fn normalize_mut(&mut self) {
+        self.monic();
+    }
+}
 #[auto_ops]
 impl<K> Div for &Polynomial<K>
 where
@@ -126,7 +187,7 @@ impl<R> MulAssign<&R> for Polynomial<R>
 where
     R: Sized + Zero + for<'x> MulAssign<&'x R>,
 {
-    fn mul_assign(&mut self, other: &R) {
+    fn mul_assign(&mut self, alpha: &R) {
         self.coef.iter_mut().for_each(|c| *c *= alpha);
         self.trim_zero();
     }
@@ -137,7 +198,7 @@ impl<R> DivAssign<&R> for Polynomial<R>
 where
     R: Sized + Zero + for<'x> DivAssign<&'x R>,
 {
-    fn div_assign(&mut self, other: &R) {
+    fn div_assign(&mut self, alpha: &R) {
         self.coef.iter_mut().for_each(|c| *c /= alpha);
     }
 }
