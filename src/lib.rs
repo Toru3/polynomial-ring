@@ -230,7 +230,7 @@ impl<R: Sized> Polynomial<R> {
     #[must_use]
     pub fn derivative(self) -> Self
     where
-        R: Sized + Zero + One + for<'x> AddAssign<&'x R> + Mul<Output = R>,
+        R: Sized + Zero + One + for<'x> AddAssign<&'x R>,
         for<'x> &'x R: Mul<Output = R>,
     {
         let n = self.coef.len();
@@ -455,7 +455,6 @@ impl<K: Sized> Polynomial<K> {
             + Clone
             + Zero
             + One
-            + Mul<Output = K>
             + for<'x> AddAssign<&'x K>
             + for<'x> SubAssign<&'x K>
             + for<'x> DivAssign<&'x K>,
