@@ -13,7 +13,7 @@ where
     M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     fn zero() -> Self {
-        Self { coef: Vec::new() }
+        Self { coeff: Vec::new() }
     }
     fn is_zero(&self) -> bool {
         self.deg().is_none()
@@ -36,9 +36,9 @@ where
     fn add_assign(&mut self, other: &Self) {
         let len = self.len();
         self.extend(other.len());
-        self.coef
+        self.coeff
             .iter_mut()
-            .zip(other.coef.iter())
+            .zip(other.coeff.iter())
             .for_each(|(l, r)| *l += r);
         if len == other.len() {
             self.trim_zero()
@@ -55,7 +55,7 @@ where
     type Output = Self;
     fn neg(self) -> Self::Output {
         Polynomial {
-            coef: self.coef.into_iter().map(|v| -v).collect(),
+            coeff: self.coeff.into_iter().map(|v| -v).collect(),
         }
     }
 }
@@ -67,7 +67,7 @@ where
     type Output = Polynomial<G>;
     fn neg(self) -> Self::Output {
         Polynomial {
-            coef: self.coef.iter().map(|v| -v).collect(),
+            coeff: self.coeff.iter().map(|v| -v).collect(),
         }
     }
 }
@@ -80,9 +80,9 @@ where
     fn sub_assign(&mut self, other: &Self) {
         let len = self.len();
         self.extend(other.len());
-        self.coef
+        self.coeff
             .iter_mut()
-            .zip(other.coef.iter())
+            .zip(other.coeff.iter())
             .for_each(|(l, r)| *l -= r);
         if len == other.len() {
             self.trim_zero()
@@ -110,14 +110,14 @@ where
     }
 }
 
-fn mul_aux<R>(sum: &mut [R], coef: &R, vec: &[R])
+fn mul_aux<R>(sum: &mut [R], coeff: &R, vec: &[R])
 where
     R: Sized + for<'x> AddAssign<&'x R>,
     for<'x> &'x R: Mul<Output = R>,
 {
     sum.iter_mut()
         .zip(vec.iter())
-        .for_each(|(l, r)| *l += &(coef * r));
+        .for_each(|(l, r)| *l += &(coeff * r));
 }
 #[auto_ops]
 impl<R> Mul for &Polynomial<R>
@@ -130,12 +130,12 @@ where
         if self.is_zero() || other.is_zero() {
             return Polynomial::<R>::zero();
         }
-        let mut coef = vec![R::zero(); self.len() + other.len() - 1];
-        self.coef
+        let mut coeff = vec![R::zero(); self.len() + other.len() - 1];
+        self.coeff
             .iter()
             .enumerate()
-            .for_each(|(i, c)| mul_aux::<R>(&mut coef[i..], c, &other.coef));
-        Polynomial::<R>::new(coef) // R may not be a domain.
+            .for_each(|(i, c)| mul_aux::<R>(&mut coeff[i..], c, &other.coeff));
+        Polynomial::<R>::new(coeff) // R may not be a domain.
     }
 }
 
@@ -188,7 +188,7 @@ where
     R: Sized + Zero + for<'x> MulAssign<&'x R>,
 {
     fn mul_assign(&mut self, alpha: &R) {
-        self.coef.iter_mut().for_each(|c| *c *= alpha);
+        self.coeff.iter_mut().for_each(|c| *c *= alpha);
         self.trim_zero();
     }
 }
@@ -199,6 +199,6 @@ where
     R: Sized + Zero + for<'x> DivAssign<&'x R>,
 {
     fn div_assign(&mut self, alpha: &R) {
-        self.coef.iter_mut().for_each(|c| *c /= alpha);
+        self.coeff.iter_mut().for_each(|c| *c /= alpha);
     }
 }
