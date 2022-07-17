@@ -373,7 +373,7 @@ impl<R: Sized> Polynomial<R> {
             g = gcd::<R>(g, c.clone());
         }
         g.normalize_mut();
-        self.coef.iter_mut().for_each(|x| *x /= &g);
+        *self /= &g;
     }
 }
 
