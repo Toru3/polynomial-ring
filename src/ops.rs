@@ -196,7 +196,7 @@ where
 #[auto_ops]
 impl<R> DivAssign<&R> for Polynomial<R>
 where
-    R: Sized + Zero + for<'x> DivAssign<&'x R>,
+    R: Sized + for<'x> DivAssign<&'x R>,
 {
     fn div_assign(&mut self, alpha: &R) {
         self.coef.iter_mut().for_each(|c| *c /= alpha);

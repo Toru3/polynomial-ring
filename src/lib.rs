@@ -396,7 +396,7 @@ impl<K: Sized> Polynomial<K> {
     {
         if let Some(lc) = self.lc() {
             let lc = lc.clone();
-            self.coef.iter_mut().for_each(|v| *v /= &lc);
+            *self /= &lc;
         }
     }
 
