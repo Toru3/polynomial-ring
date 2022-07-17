@@ -12,7 +12,7 @@ keywords = ["algebra", "polynomial"]
 categories = ["data-structures", "algorithms", "mathematics"]
 
 [dependencies]
-auto-impl-ops = { version = "0.1.0", path = "../auto-impl-ops", features = ["take_mut"] }
+auto-impl-ops = { version = "0.1.0", features = ["take_mut"] }
 num-traits = "0.2.11"
 ring-algorithm = { version = "0.4.4", default-features = false }
 
