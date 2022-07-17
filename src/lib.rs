@@ -88,22 +88,6 @@ impl<T: crate::Sized> Polynomial<T> {
 }
 
 // additive monoid
-impl<M> Polynomial<M> {
-    fn add_assign_ref(&mut self, other: &Self)
-    where
-        M: Sized + Zero + for<'x> AddAssign<&'x M>,
-    {
-        let len = self.len();
-        self.extend(other.len());
-        self.coef
-            .iter_mut()
-            .zip(other.coef.iter())
-            .for_each(|(l, r)| *l += r);
-        if len == other.len() {
-            self.trim_zero()
-        }
-    }
-}
 impl<M> Zero for Polynomial<M>
 where
     M: Sized + Zero + for<'x> AddAssign<&'x M>,
@@ -195,68 +179,7 @@ macro_rules! polynomial {
     }
 }
 
-// additive group
-impl<G> Polynomial<G> {
-    fn neg_impl(self) -> Self
-    where
-        G: Sized + Neg<Output = G>,
-    {
-        Polynomial {
-            coef: self.coef.into_iter().map(|v| -v).collect(),
-        }
-    }
-    fn neg_ref(&self) -> Self
-    where
-        G: Sized,
-        for<'x> &'x G: Neg<Output = G>,
-    {
-        Polynomial {
-            coef: self.coef.iter().map(|v| -v).collect(),
-        }
-    }
-    fn sub_assign_ref(&mut self, other: &Self)
-    where
-        G: Sized + Zero + for<'x> SubAssign<&'x G>,
-    {
-        let len = self.len();
-        self.extend(other.len());
-        self.coef
-            .iter_mut()
-            .zip(other.coef.iter())
-            .for_each(|(l, r)| *l -= r);
-        if len == other.len() {
-            self.trim_zero()
-        }
-    }
-}
-
 // unitary ring
-fn mul_aux<R>(sum: &mut [R], coef: &R, vec: &[R])
-where
-    R: Sized + for<'x> AddAssign<&'x R>,
-    for<'x> &'x R: Mul<Output = R>,
-{
-    sum.iter_mut()
-        .zip(vec.iter())
-        .for_each(|(l, r)| *l += &(coef * r));
-}
-impl<R> Polynomial<R> {
-    fn mul_impl(&self, other: &Self) -> Self
-    where
-        R: Sized + Clone + Zero + for<'x> AddAssign<&'x R>,
-        for<'x> &'x R: Mul<Output = R>,
-    {
-        if self.is_zero() || other.is_zero() {
-            return Self::zero();
-        }
-        let mut coef = vec![R::zero(); self.len() + other.len() - 1];
-        self.coef
-            .iter()
-            .enumerate()
-            .for_each(|(i, c)| mul_aux::<R>(&mut coef[i..], c, &other.coef));
-        Polynomial::<R>::new(coef) // R may not be a domain.
-    }
-}
 impl<R> One for Polynomial<R>
 where
     R: Sized + Clone + Zero + for<'x> AddAssign<&'x R> + One,
@@ -358,14 +281,6 @@ impl<R: Sized> Polynomial<R> {
             i += &R::one();
         }
         Polynomial::new(coef)
-    }
-
-    fn scalar_mul_assign_impl(&mut self, alpha: &R)
-    where
-        R: Sized + Zero + for<'x> MulAssign<&'x R>,
-    {
-        self.coef.iter_mut().for_each(|c| *c *= alpha);
-        self.trim_zero();
     }
 
     /** Pseudo division.
@@ -604,12 +519,5 @@ impl<K: Sized> Polynomial<K> {
         let d = self.clone().derivative().into_normalize();
         let f = ring_algorithm::gcd::<Self>(self.clone(), d).into_normalize();
         (self / &f).into_normalize()
-    }
-
-    fn scalar_div_assign_impl(&mut self, alpha: &K)
-    where
-        K: Sized + Zero + for<'x> DivAssign<&'x K>,
-    {
-        self.coef.iter_mut().for_each(|c| *c /= alpha);
     }
 }

@@ -11,7 +11,15 @@ where
     M: Sized + Zero + for<'x> AddAssign<&'x M>,
 {
     fn add_assign(&mut self, other: &Self) {
-        self.add_assign_ref(other)
+        let len = self.len();
+        self.extend(other.len());
+        self.coef
+            .iter_mut()
+            .zip(other.coef.iter())
+            .for_each(|(l, r)| *l += r);
+        if len == other.len() {
+            self.trim_zero()
+        }
     }
 }
 
@@ -22,7 +30,9 @@ where
 {
     type Output = Self;
     fn neg(self) -> Self::Output {
-        self.neg_impl()
+        Polynomial {
+            coef: self.coef.into_iter().map(|v| -v).collect(),
+        }
     }
 }
 impl<G> Neg for &Polynomial<G>
@@ -32,7 +42,9 @@ where
 {
     type Output = Polynomial<G>;
     fn neg(self) -> Self::Output {
-        self.neg_ref()
+        Polynomial {
+            coef: self.coef.iter().map(|v| -v).collect(),
+        }
     }
 }
 
@@ -42,10 +54,27 @@ where
     G: Sized + Zero + for<'x> SubAssign<&'x G>,
 {
     fn sub_assign(&mut self, other: &Self) {
-        self.sub_assign_ref(other)
+        let len = self.len();
+        self.extend(other.len());
+        self.coef
+            .iter_mut()
+            .zip(other.coef.iter())
+            .for_each(|(l, r)| *l -= r);
+        if len == other.len() {
+            self.trim_zero()
+        }
     }
 }
 
+fn mul_aux<R>(sum: &mut [R], coef: &R, vec: &[R])
+where
+    R: Sized + for<'x> AddAssign<&'x R>,
+    for<'x> &'x R: Mul<Output = R>,
+{
+    sum.iter_mut()
+        .zip(vec.iter())
+        .for_each(|(l, r)| *l += &(coef * r));
+}
 #[auto_ops]
 impl<R> Mul for &Polynomial<R>
 where
@@ -54,7 +83,15 @@ where
 {
     type Output = Polynomial<R>;
     fn mul(self, other: Self) -> Self::Output {
-        self.mul_impl(other)
+        if self.is_zero() || other.is_zero() {
+            return Self::zero();
+        }
+        let mut coef = vec![R::zero(); self.len() + other.len() - 1];
+        self.coef
+            .iter()
+            .enumerate()
+            .for_each(|(i, c)| mul_aux::<R>(&mut coef[i..], c, &other.coef));
+        Polynomial::<R>::new(coef) // R may not be a domain.
     }
 }
 
@@ -90,7 +127,8 @@ where
     R: Sized + Zero + for<'x> MulAssign<&'x R>,
 {
     fn mul_assign(&mut self, other: &R) {
-        self.scalar_mul_assign_impl(other);
+        self.coef.iter_mut().for_each(|c| *c *= alpha);
+        self.trim_zero();
     }
 }
 
@@ -100,6 +138,6 @@ where
     R: Sized + Zero + for<'x> DivAssign<&'x R>,
 {
     fn div_assign(&mut self, other: &R) {
-        self.scalar_div_assign_impl(other);
+        self.coef.iter_mut().for_each(|c| *c /= alpha);
     }
 }
