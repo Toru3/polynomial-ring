@@ -77,13 +77,13 @@ impl<T: crate::Sized> Polynomial<T> {
     ```
     use polynomial_ring::Polynomial;
     let p = Polynomial::new(vec![3, 2, 1]); // 3+2x+x^2
-    assert_eq!(p.coefs(), vec![3, 2, 1]);
+    assert_eq!(p.coeffs(), &[3, 2, 1]);
     let q = Polynomial::new(vec![0]); // 0
-    assert_eq!(q.coefs(), Vec::<i32>::new());
+    assert_eq!(q.coeffs(), &[]);
     ```
     */
-    pub fn coefs(self) -> Vec<T> {
-        self.coef
+    pub fn coeffs(&self) -> &[T] {
+        &self.coef
     }
 }
 
