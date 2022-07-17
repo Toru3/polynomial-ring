@@ -228,7 +228,7 @@ impl<R: Sized> Polynomial<R> {
     ```
     */
     #[must_use]
-    pub fn derivative(self) -> Self
+    pub fn derivative(&self) -> Self
     where
         R: Sized + Zero + One + for<'x> AddAssign<&'x R>,
         for<'x> &'x R: Mul<Output = R>,
@@ -237,8 +237,8 @@ impl<R: Sized> Polynomial<R> {
         let n = if n > 0 { n - 1 } else { 0 };
         let mut coef = Vec::with_capacity(n);
         let mut i = R::one();
-        for c in self.coef.into_iter().skip(1) {
-            coef.push(&i * &c);
+        for c in self.coef.iter().skip(1) {
+            coef.push(&i * c);
             i += &R::one();
         }
         Polynomial::new(coef)
@@ -460,7 +460,7 @@ impl<K: Sized> Polynomial<K> {
             + for<'x> DivAssign<&'x K>,
         for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
     {
-        let d = self.clone().derivative().into_normalize();
+        let d = self.derivative().into_normalize();
         let f = ring_algorithm::gcd::<Self>(self.clone(), d).into_normalize();
         (self / &f).into_normalize()
     }
