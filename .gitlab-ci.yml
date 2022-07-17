@@ -5,8 +5,8 @@ image: "rust:latest"
     - rustup component add rustfmt clippy
     - rustup --version && rustc --version && cargo --version
     - cargo fmt --all -- --check
-    - cargo clippy --workspace --all-targets --all-features --verbose -- -D warnings
-    - cargo test --workspace --verbose
+    - cargo clippy --workspace --all-targets --all-features -- -D warnings
+    - cargo test --workspace
 
 test:stable:
   <<: *run_test
