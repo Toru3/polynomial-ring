@@ -90,35 +90,36 @@ fn mul() {
 }
 
 mod residue_class {
-    #![allow(clippy::suspicious_op_assign_impl)]
-    use auto_ops::impl_op_ex;
+    use std::ops::*;
     #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
-    pub struct ResidueClass6 {
+    pub struct ResidueClass<const M: i64> {
         n: i64,
     }
-    impl ResidueClass6 {
+    impl<const M: i64> ResidueClass<M> {
         pub fn new(n: i64) -> Self {
-            ResidueClass6 { n }
+            ResidueClass { n }
         }
     }
-    impl std::fmt::Display for ResidueClass6 {
+    impl<const M: i64> std::fmt::Display for ResidueClass<M> {
         fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             write!(f, "{}", self.n)
         }
     }
-    impl_op_ex!(+= |a: &mut ResidueClass6, b: &ResidueClass6| { a.n = (a.n + b.n) % 6; });
-    impl_op_ex!(*= |a: &mut ResidueClass6, b: &ResidueClass6| { a.n = (a.n * b.n) % 6; });
-    impl_op_ex!(+ |a: &ResidueClass6, b: &ResidueClass6| -> ResidueClass6 {
-        let mut c = *a;
-        c += b;
-        c
-    });
-    impl_op_ex!(*|a: &ResidueClass6, b: &ResidueClass6| -> ResidueClass6 {
-        let mut c = *a;
-        c *= b;
-        c
-    });
-    impl num_traits::Zero for ResidueClass6 {
+    macro_rules! impl_ops {
+        ($fn:ident, $trait:ident) => {
+            #[auto_impl_ops::auto_ops]
+            impl<const M: i64> $trait for &ResidueClass<M> {
+                type Output = ResidueClass<M>;
+                fn $fn(self, rhs: Self) -> Self::Output {
+                    ResidueClass::<M>::new(self.n.$fn(rhs.n).rem(M))
+                }
+            }
+        };
+    }
+    impl_ops!(add, Add);
+    impl_ops!(sub, Sub);
+    impl_ops!(mul, Mul);
+    impl<const M: i64> num_traits::Zero for ResidueClass<M> {
         fn zero() -> Self {
             Self::new(i64::zero())
         }
@@ -130,10 +131,10 @@ mod residue_class {
 
 #[test]
 fn mul2() {
-    use residue_class::ResidueClass6;
-    let p = polynomial![ResidueClass6::new(2), ResidueClass6::new(3)];
-    let q = polynomial![ResidueClass6::new(1), ResidueClass6::new(2)];
-    let r = polynomial![ResidueClass6::new(2), ResidueClass6::new(1)];
+    type R = residue_class::ResidueClass<6>;
+    let p = polynomial![R::new(2), R::new(3)];
+    let q = polynomial![R::new(1), R::new(2)];
+    let r = polynomial![R::new(2), R::new(1)];
     assert_eq!(p * q, r);
 }
 
