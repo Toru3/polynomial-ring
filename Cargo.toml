@@ -1,6 +1,6 @@
 [package]
 name = "polynomial-ring"
-version = "0.4.7"
+version = "0.5.0-alpha"
 authors = ["Toru3 <ryuutet@gmail.com>"]
 edition = "2018"
 description = "A polynomial implementation"
