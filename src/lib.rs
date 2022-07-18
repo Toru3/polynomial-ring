@@ -30,12 +30,12 @@ assert_eq!(f, q * g + r);
 */
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Polynomial<T> {
-    coeff: Vec<T>,
+    coef: Vec<T>,
 }
 
 impl<T: crate::Sized> Polynomial<T> {
     fn len(&self) -> usize {
-        self.coeff.len()
+        self.coef.len()
     }
 
     /** The degree of the polynomial.
@@ -50,7 +50,7 @@ impl<T: crate::Sized> Polynomial<T> {
     ```
     */
     pub fn deg(&self) -> Option<usize> {
-        if self.coeff.is_empty() {
+        if self.coef.is_empty() {
             None
         } else {
             Some(self.len() - 1)
@@ -69,7 +69,7 @@ impl<T: crate::Sized> Polynomial<T> {
     ```
     */
     pub fn lc(&self) -> Option<&T> {
-        self.deg().map(|d| &self.coeff[d])
+        self.deg().map(|d| &self.coef[d])
     }
 
     /** Get the coefficents.
@@ -83,7 +83,7 @@ impl<T: crate::Sized> Polynomial<T> {
     ```
     */
     pub fn coeffs(&self) -> &[T] {
-        &self.coeff
+        &self.coef
     }
 }
 
@@ -91,12 +91,12 @@ impl<T: crate::Sized> Polynomial<T> {
 impl<M: crate::Sized + Zero> Polynomial<M> {
     fn trim_zero(&mut self) {
         let len = self
-            .coeff
+            .coef
             .iter()
             .rposition(|x| !x.is_zero())
             .map(|pos| pos + 1)
             .unwrap_or(0);
-        self.coeff.truncate(len);
+        self.coef.truncate(len);
     }
 
     /** Construct a polynomial from a [Vec] of coefficients.
@@ -107,15 +107,15 @@ impl<M: crate::Sized + Zero> Polynomial<M> {
     assert_eq!(p.to_string(), "x^2+2*x+3");
     ```
     */
-    pub fn new(coeff: Vec<M>) -> Self {
-        let mut poly = Self { coeff };
+    pub fn new(coef: Vec<M>) -> Self {
+        let mut poly = Self { coef };
         poly.trim_zero();
         poly
     }
 
     fn extend(&mut self, len: usize) {
         if self.len() < len {
-            self.coeff.resize_with(len, M::zero);
+            self.coef.resize_with(len, M::zero);
         }
     }
 
@@ -129,17 +129,17 @@ impl<M: crate::Sized + Zero> Polynomial<M> {
     ```
     */
     pub fn from_monomial(coefficent: M, degree: usize) -> Self {
-        let coeff = if coefficent.is_zero() {
+        let coef = if coefficent.is_zero() {
             Vec::new()
         } else {
-            let mut coeff = Vec::with_capacity(degree + 1);
+            let mut coef = Vec::with_capacity(degree + 1);
             for _ in 0..degree {
-                coeff.push(M::zero());
+                coef.push(M::zero());
             }
-            coeff.push(coefficent);
-            coeff
+            coef.push(coefficent);
+            coef
         };
-        Self { coeff }
+        Self { coef }
     }
 }
 
@@ -165,7 +165,7 @@ where
     R: PartialEq + fmt::Display + Zero + One,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let vec = &self.coeff;
+        let vec = &self.coef;
         if vec.is_empty() {
             return write!(f, "0");
         }
@@ -212,7 +212,7 @@ impl<R: Sized> Polynomial<R> {
         R: Sized + Zero + for<'x> AddAssign<&'x R> + MulAssign<&'a R>,
     {
         let mut sum = R::zero();
-        for coeff in self.coeff.iter().rev() {
+        for coeff in self.coef.iter().rev() {
             sum *= x;
             sum += coeff;
         }
@@ -233,15 +233,15 @@ impl<R: Sized> Polynomial<R> {
         R: Sized + Zero + One + for<'x> AddAssign<&'x R>,
         for<'x> &'x R: Mul<Output = R>,
     {
-        let n = self.coeff.len();
+        let n = self.coef.len();
         let n = if n > 0 { n - 1 } else { 0 };
-        let mut coeff = Vec::with_capacity(n);
+        let mut coef = Vec::with_capacity(n);
         let mut i = R::one();
-        for c in self.coeff.into_iter().skip(1) {
-            coeff.push(&i * &c);
+        for c in self.coef.into_iter().skip(1) {
+            coef.push(&i * &c);
             i += &R::one();
         }
-        Polynomial::new(coeff)
+        Polynomial::new(coef)
     }
 
     /** Pseudo division.
@@ -274,26 +274,26 @@ impl<R: Sized> Polynomial<R> {
         debug_assert!(f_deg >= g_deg);
         let k = f_deg - g_deg + 1;
         let lc = other.lc().unwrap();
-        let mut coeff = vec![R::zero(); k];
+        let mut coef = vec![R::zero(); k];
         let mut scale = R::one();
         while self.deg() >= other.deg() {
             let d = self.deg().unwrap() - g_deg;
             let c = self.lc().unwrap().clone();
             for i in 0..other.len() - 1 {
-                self.coeff[i + d] = &(lc * &self.coeff[i + d]) - &(&c * &other.coeff[i]);
+                self.coef[i + d] = &(lc * &self.coef[i + d]) - &(&c * &other.coef[i]);
             }
             for i in 0..d {
-                self.coeff[i] *= lc;
+                self.coef[i] *= lc;
             }
-            self.coeff.pop(); // new deg < prev deg
+            self.coef.pop(); // new deg < prev deg
             self.trim_zero();
-            for c_i in coeff.iter_mut().skip(d + 1) {
+            for c_i in coef.iter_mut().skip(d + 1) {
                 *c_i *= lc;
             }
-            coeff[d] = c;
+            coef[d] = c;
             scale *= lc;
         }
-        (scale, Self { coeff })
+        (scale, Self { coef })
     }
 
     /** Calculate the [resultant](https://en.wikipedia.org/wiki/Resultant)
@@ -368,12 +368,12 @@ impl<R: Sized> Polynomial<R> {
         if self.deg().is_none() {
             return;
         }
-        let mut g = self.coeff[0].clone();
-        for c in &self.coeff[1..] {
+        let mut g = self.coef[0].clone();
+        for c in &self.coef[1..] {
             g = gcd::<R>(g, c.clone());
         }
         g.normalize_mut();
-        self.coeff.iter_mut().for_each(|x| *x /= &g);
+        self.coef.iter_mut().for_each(|x| *x /= &g);
     }
 }
 
@@ -396,7 +396,7 @@ impl<K: Sized> Polynomial<K> {
     {
         if let Some(lc) = self.lc() {
             let lc = lc.clone();
-            self.coeff.iter_mut().for_each(|v| *v /= &lc);
+            self.coef.iter_mut().for_each(|v| *v /= &lc);
         }
     }
 
@@ -423,18 +423,18 @@ impl<K: Sized> Polynomial<K> {
             return Self::zero();
         }
         let lc = other.lc().unwrap();
-        let mut coeff = vec![K::zero(); self.len() - other.len() + 1];
+        let mut coef = vec![K::zero(); self.len() - other.len() + 1];
         while self.deg() >= other.deg() {
             let d = self.deg().unwrap() - g_deg;
             let c = self.lc().unwrap() / lc;
             for i in 0..other.len() - 1 {
-                self.coeff[i + d] -= &(&c * &other.coeff[i]);
+                self.coef[i + d] -= &(&c * &other.coef[i]);
             }
-            self.coeff.pop(); // new deg < prev deg
+            self.coef.pop(); // new deg < prev deg
             self.trim_zero();
-            coeff[d] = c;
+            coef[d] = c;
         }
-        Self { coeff }
+        Self { coef }
     }
 
     /** Calculate the [square-free decomposition](https://en.wikipedia.org/wiki/Square-free_polynomial).
