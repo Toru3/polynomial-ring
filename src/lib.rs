@@ -1,5 +1,5 @@
+#![cfg_attr(feature = "__internal_inject_debug", recursion_limit = "16")]
 #![doc = include_str!("../README.md")]
-#![cfg_attr(feature = "__internal_inject_debug", recursion_limit = "8")]
 
 mod sealed {
     pub trait SizedExt: std::marker::Sized + std::fmt::Debug + std::fmt::Display {}
@@ -223,22 +223,22 @@ impl<R: Sized> Polynomial<R> {
 
     ```
     use polynomial_ring::{Polynomial, polynomial};
-    let p = polynomial![1, 2, 3, 2, 1]; // 1+2x+3x^2+2x^3+x^4
+    let p = polynomial![1i32, 2, 3, 2, 1]; // 1+2x+3x^2+2x^3+x^4
     assert_eq!(p.derivative(), polynomial![2, 6, 6, 4]); // 2+6x+6x^2+4x^3
     ```
     */
     #[must_use]
     pub fn derivative(&self) -> Self
     where
-        R: Sized + Zero + One + for<'x> AddAssign<&'x R>,
-        for<'x> &'x R: Mul<Output = R>,
+        R: Sized + Zero + One + for<'x> AddAssign<&'x R> + for<'x> From<<&'x R as Mul>::Output>,
+        for<'x> &'x R: Mul,
     {
         let n = self.coeff.len();
         let n = if n > 0 { n - 1 } else { 0 };
         let mut coeff = Vec::with_capacity(n);
         let mut i = R::one();
         for c in self.coeff.iter().skip(1) {
-            coeff.push(&i * c);
+            coeff.push(R::from(&i * c));
             i += &R::one();
         }
         Polynomial::new(coeff)
@@ -253,7 +253,7 @@ impl<R: Sized> Polynomial<R> {
     ```
     use polynomial_ring::{polynomial, Polynomial};
 
-    let f = polynomial![1, 3, 1]; // 1+3x+x^2 ∈ Z[x]
+    let f = polynomial![1i32, 3, 1]; // 1+3x+x^2 ∈ Z[x]
     let g = polynomial![5, 2]; // 5+2x ∈ Z[x]
     let mut r = f.clone();
     let (s, q) = r.pseudo_division(&g);
@@ -262,8 +262,15 @@ impl<R: Sized> Polynomial<R> {
     */
     pub fn pseudo_division(&mut self, other: &Self) -> (R, Self)
     where
-        R: Sized + Clone + Zero + One + for<'x> AddAssign<&'x R> + for<'x> MulAssign<&'x R>,
-        for<'x> &'x R: Sub<Output = R> + Mul<Output = R>,
+        R: Sized
+            + Clone
+            + Zero
+            + One
+            + for<'x> AddAssign<&'x R>
+            + for<'x> MulAssign<&'x R>
+            + for<'x> From<<&'x R as Sub>::Output>
+            + for<'x> From<<&'x R as Mul>::Output>,
+        for<'x> &'x R: Sub + Mul,
     {
         let g_deg = other.deg().expect("Division by zero");
         let f_deg = self.deg();
@@ -280,7 +287,8 @@ impl<R: Sized> Polynomial<R> {
             let d = self.deg().unwrap() - g_deg;
             let c = self.lc().unwrap().clone();
             for i in 0..other.len() - 1 {
-                self.coeff[i + d] = &(lc * &self.coeff[i + d]) - &(&c * &other.coeff[i]);
+                self.coeff[i + d] =
+                    R::from(&R::from(lc * &self.coeff[i + d]) - &R::from(&c * &other.coeff[i]));
             }
             for i in 0..d {
                 self.coeff[i] *= lc;
@@ -301,7 +309,7 @@ impl<R: Sized> Polynomial<R> {
     ```
     use polynomial_ring::{polynomial, Polynomial};
 
-    let f = polynomial![0, 2, 0, 1]; // 2x+x^3 ∈ Z[x]
+    let f = polynomial![0i32, 2, 0, 1]; // 2x+x^3 ∈ Z[x]
     let g = polynomial![2, 3, 5]; // 2+3x+5x^2 ∈ Z[x]
     let r = f.resultant(g);
     assert_eq!(r, 164);
@@ -315,8 +323,11 @@ impl<R: Sized> Polynomial<R> {
             + One
             + for<'x> AddAssign<&'x R>
             + for<'x> MulAssign<&'x R>
-            + Neg<Output = R>,
-        for<'x> &'x R: Sub<Output = R> + Mul<Output = R> + Div<Output = R>,
+            + Neg<Output = R>
+            + for<'x> From<<&'x R as Sub>::Output>
+            + for<'x> From<<&'x R as Mul>::Output>
+            + for<'x> From<<&'x R as Div>::Output>,
+        for<'x> &'x R: Sub + Mul + Div,
     {
         let f_deg = self.deg();
         let g_deg = other.deg();
@@ -327,18 +338,24 @@ impl<R: Sized> Polynomial<R> {
             (None, None) => R::zero(),
             (None, Some(_)) => R::zero(),
             (Some(_), None) => R::zero(),
-            (Some(0), Some(m)) => ring_algorithm::power::<R>(self.lc().unwrap().clone(), m as u64),
-            (Some(n), Some(0)) => ring_algorithm::power::<R>(other.lc().unwrap().clone(), n as u64),
+            (Some(0), Some(m)) => {
+                ring_algorithm::power::<R, u64>(self.lc().unwrap().clone(), m as u64)
+            }
+            (Some(n), Some(0)) => {
+                ring_algorithm::power::<R, u64>(other.lc().unwrap().clone(), n as u64)
+            }
             (Some(n), Some(m)) => {
                 debug_assert!(n >= 1);
                 debug_assert!(m >= 1);
                 let (scale, _) = self.pseudo_division(&other);
                 if let Some(l) = self.deg() {
                     let sign = if n * m % 2 == 0 { R::one() } else { -R::one() };
-                    let mul =
-                        ring_algorithm::power::<R>(other.lc().unwrap().clone(), (n - l) as u64);
-                    let div = ring_algorithm::power::<R>(scale, m as u64);
-                    &(other.resultant(self) * sign * mul) / &div
+                    let mul = ring_algorithm::power::<R, u64>(
+                        other.lc().unwrap().clone(),
+                        (n - l) as u64,
+                    );
+                    let div = ring_algorithm::power::<R, u64>(scale, m as u64);
+                    R::from(&(other.resultant(self) * sign * mul) / &div)
                 } else {
                     // g | f, gcd(f, g) = g
                     R::zero()
@@ -352,18 +369,23 @@ impl<R: Sized> Polynomial<R> {
     ```
     use polynomial_ring::{polynomial, Polynomial};
     use num_traits::{One, Zero};
-    let mut f = polynomial![2, 4, -2, 6]; // 2+4x+2x^2+6x^3 ∈ Z[x]
+    let mut f = polynomial![2i32, 4, -2, 6]; // 2+4x+2x^2+6x^3 ∈ Z[x]
     f.primitive_part_mut();
     assert_eq!(f, polynomial![1, 2, -1, 3]);// 1+2x+x^2+3x^3 ∈ Z[x]
-    let mut g = polynomial![polynomial![1, 1], polynomial![1, 2, 1], polynomial![3, 4, 1], polynomial![-1, -1]]; // (1+x)+(1+2x+x^2)y+(3+4x+x^2)y^2+(-1-x)y^3 ∈ Z[x][y]
+    let mut g = polynomial![polynomial![1i32, 1], polynomial![1, 2, 1], polynomial![3, 4, 1], polynomial![-1, -1]]; // (1+x)+(1+2x+x^2)y+(3+4x+x^2)y^2+(-1-x)y^3 ∈ Z[x][y]
     g.primitive_part_mut();
     assert_eq!(g, polynomial![polynomial![1], polynomial![1, 1], polynomial![3, 1], polynomial![-1]]); // 1+(1+x)y+(3+x)y^2-y^3 ∈ Z[x][y]
     ```
     */
     pub fn primitive_part_mut(&mut self)
     where
-        R: Sized + Clone + Zero + for<'x> DivAssign<&'x R> + RingNormalize,
-        for<'x> &'x R: Rem<Output = R>,
+        R: Sized
+            + Clone
+            + Zero
+            + for<'x> DivAssign<&'x R>
+            + RingNormalize
+            + for<'x> From<<&'x R as Rem>::Output>,
+        for<'x> &'x R: Rem,
     {
         if self.deg().is_none() {
             return;
@@ -412,11 +434,15 @@ impl<K: Sized> Polynomial<K> {
     assert_eq!(f, q * g + r);
     ```
     */
-    #[allow(unknown_lints, clippy::return_self_not_must_use)]
     pub fn division(&mut self, other: &Self) -> Self
     where
-        K: Sized + Clone + Zero + for<'x> AddAssign<&'x K> + for<'x> SubAssign<&'x K>,
-        for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
+        K: Sized
+            + Clone
+            + Zero
+            + for<'x> AddAssign<&'x K>
+            + for<'x> SubAssign<&'x K>
+            + for<'x> MulAssign<&'x K>
+            + for<'x> DivAssign<&'x K>,
     {
         let g_deg = other.deg().expect("Division by zero");
         if self.deg() < other.deg() {
@@ -426,9 +452,12 @@ impl<K: Sized> Polynomial<K> {
         let mut coeff = vec![K::zero(); self.len() - other.len() + 1];
         while self.deg() >= other.deg() {
             let d = self.deg().unwrap() - g_deg;
-            let c = self.lc().unwrap() / lc;
+            let mut c = self.lc().unwrap().clone();
+            c /= lc;
             for i in 0..other.len() - 1 {
-                self.coeff[i + d] -= &(&c * &other.coeff[i]);
+                let mut c = c.clone();
+                c *= &other.coeff[i];
+                self.coeff[i + d] -= &c;
             }
             self.coeff.pop(); // new deg < prev deg
             self.trim_zero();
@@ -457,8 +486,11 @@ impl<K: Sized> Polynomial<K> {
             + One
             + for<'x> AddAssign<&'x K>
             + for<'x> SubAssign<&'x K>
-            + for<'x> DivAssign<&'x K>,
-        for<'x> &'x K: Mul<Output = K> + Div<Output = K>,
+            + for<'x> MulAssign<&'x K>
+            + for<'x> DivAssign<&'x K>
+            + for<'x> From<<&'x K as Mul>::Output>
+            + for<'x> From<<&'x K as Div>::Output>,
+        for<'x> &'x K: Mul + Div,
     {
         let d = self.derivative().into_normalize();
         let f = ring_algorithm::gcd::<Self>(self.clone(), d).into_normalize();

@@ -1,6 +1,10 @@
+#![cfg_attr(feature = "__internal_inject_debug", recursion_limit = "16")]
 use num_traits::{One, Zero};
 use polynomial_ring::*;
-use ring_algorithm::{extended_euclidian_algorithm, gcd, EuclideanRingOperation, RingNormalize};
+use ring_algorithm::{
+    extended_euclidian_algorithm, gcd, EuclideanRingOperation, EuclideanRingOperationFrom,
+    RingNormalize,
+};
 use std::fmt::{Debug, Display};
 
 fn make_q_x<T>(v: Vec<(T, T)>) -> Polynomial<num::rational::Ratio<T>>
@@ -11,6 +15,17 @@ where
         .into_iter()
         .map(|(n, d)| num::rational::Ratio::<T>::new(n, d))
         .collect();
+    Polynomial::new(v)
+}
+fn make_q_x_rug(v: &[(i32, i32)]) -> Polynomial<rug::Rational> {
+    let v = v
+        .iter()
+        .map(|(n, d)| rug::Rational::from((*n, *d)))
+        .collect();
+    Polynomial::new(v)
+}
+fn make_z_x_rug(v: &[i32]) -> Polynomial<rug::Integer> {
+    let v = v.iter().map(|x| rug::Integer::from(*x)).collect();
     Polynomial::new(v)
 }
 
@@ -36,6 +51,12 @@ fn add2() {
     let q = make_q_x(vec![(2, 7), (1, 8), (2, 8)]);
     assert_eq!(p + q, make_q_x(vec![(23, 7), (33, 8), (58, 72), (2, 6)]));
 }
+#[test]
+fn add3() {
+    let p = make_q_x_rug(&[(3, 1), (4, 1), (5, 9), (2, 6)]);
+    let q = make_q_x_rug(&[(2, 7), (1, 8), (2, 8)]);
+    assert_eq!(p + q, make_q_x_rug(&[(23, 7), (33, 8), (58, 72), (2, 6)]));
+}
 
 #[test]
 fn sum() {
@@ -52,11 +73,31 @@ fn sum() {
         make_q_x(vec![(31, 32), (9, 15), (1, 9)])
     );
 }
+#[test]
+fn sum2() {
+    type R = Polynomial<rug::Rational>;
+    let v = vec![
+        make_q_x_rug(&[(1, 2), (1, 3)]),
+        make_q_x_rug(&[(1, 4), (1, 5)]),
+        make_q_x_rug(&[(1, 8)]),
+        make_q_x_rug(&[(1, 16), (1, 15), (1, 9)]),
+        make_q_x_rug(&[(1, 32)]),
+    ];
+    assert_eq!(
+        v.into_iter().sum::<R>(),
+        make_q_x_rug(&[(31, 32), (9, 15), (1, 9)])
+    );
+}
 
 #[test]
 fn neg() {
     let p = polynomial![1, 4, 1, 4, 1, 3, 5, 6];
     assert_eq!(-p, polynomial![-1, -4, -1, -4, -1, -3, -5, -6]);
+}
+#[test]
+fn neg2() {
+    let p = make_z_x_rug(&[1, 4, 1, 4, 1, 3, 5, 6]);
+    assert_eq!(-p, make_z_x_rug(&[-1, -4, -1, -4, -1, -3, -5, -6]));
 }
 
 #[test]
@@ -83,8 +124,15 @@ fn sub2() {
 }
 
 #[test]
+fn sub3() {
+    let p = make_q_x_rug(&[(3, 1), (4, 1), (5, 9)]);
+    let q = make_q_x_rug(&[(2, 7), (1, 8), (2, 8), (1, 1)]);
+    assert_eq!(p - q, make_q_x_rug(&[(19, 7), (31, 8), (22, 72), (-1, 1)]));
+}
+
+#[test]
 fn mul() {
-    let p = polynomial![1, 2, 3];
+    let p = polynomial![1i32, 2, 3];
     let q = polynomial![5, 4, 2];
     assert_eq!(p * q, polynomial![5, 14, 25, 16, 6]);
 }
@@ -111,7 +159,7 @@ mod residue_class {
             impl<const M: i64> $trait for &ResidueClass<M> {
                 type Output = ResidueClass<M>;
                 fn $fn(self, rhs: Self) -> Self::Output {
-                    ResidueClass::<M>::new(self.n.$fn(rhs.n).rem(M))
+                    ResidueClass::<M>::new(i64::rem(i64::$fn(self.n, rhs.n), M))
                 }
             }
         };
@@ -139,6 +187,13 @@ fn mul2() {
 }
 
 #[test]
+fn mul3() {
+    let p = make_z_x_rug(&[1i32, 2, 3]);
+    let q = make_z_x_rug(&[5, 4, 2]);
+    assert_eq!(p * q, make_z_x_rug(&[5, 14, 25, 16, 6]));
+}
+
+#[test]
 fn product() {
     type R = Polynomial<i64>;
     let v = vec![
@@ -153,6 +208,23 @@ fn product() {
 }
 
 #[test]
+fn product2() {
+    type R = Polynomial<rug::Rational>;
+    let v = vec![
+        make_q_x_rug(&[(-2, 1), (1, 1)]),
+        make_q_x_rug(&[(-1, 1), (1, 1)]),
+        make_q_x_rug(&[(0, 1), (1, 1)]),
+        make_q_x_rug(&[(1, 1), (1, 1)]),
+        make_q_x_rug(&[(2, 1), (1, 1)]),
+    ];
+    let p = v.into_iter().product::<R>();
+    assert_eq!(
+        p,
+        make_q_x_rug(&[(0, 1), (4, 1), (0, 1), (-5, 1), (0, 1), (1, 1)])
+    );
+}
+
+#[test]
 fn display() {
     assert_eq!(polynomial![0].to_string(), "0");
     assert_eq!(polynomial![3, 2, 1].to_string(), "x^2+2*x+3");
@@ -160,9 +232,28 @@ fn display() {
 }
 
 #[test]
+fn display2() {
+    assert_eq!(make_z_x_rug(&[0]).to_string(), "0");
+    assert_eq!(make_z_x_rug(&[3, 2, 1]).to_string(), "x^2+2*x+3");
+    assert_eq!(
+        make_z_x_rug(&[0, -2, -1, 3]).to_string(),
+        "3*x^3+-1*x^2+-2*x"
+    );
+}
+
+#[test]
 fn scalar_mul() {
     let p = polynomial![1, 4, 1, 4, 1, 3, 5, 6];
     assert_eq!(p * 2, polynomial![2, 8, 2, 8, 2, 6, 10, 12]);
+}
+
+#[test]
+fn scalar_mul2() {
+    let p = make_z_x_rug(&[1, 4, 1, 4, 1, 3, 5, 6]);
+    assert_eq!(
+        p * rug::Integer::from(2),
+        make_z_x_rug(&[2, 8, 2, 8, 2, 6, 10, 12])
+    );
 }
 
 #[test]
@@ -173,9 +264,23 @@ fn scalar_div() {
     assert_eq!(p / two, q);
 }
 
+#[test]
+fn scalar_div2() {
+    let mut p = make_q_x_rug(&[(3, 1), (4, 1), (5, 9)]);
+    let q = make_q_x_rug(&[(3, 2), (2, 1), (5, 18)]);
+    let two = rug::Rational::from((2, 1));
+    p /= &two;
+    assert_eq!(p, q);
+}
+
 macro_rules! poly {
     ($($x:expr),*) => {
         Polynomial::new(vec![$(num::Rational64::from_integer($x)),*])
+    }
+}
+macro_rules! poly_rug {
+    ($($x:expr),*) => {
+        Polynomial::new(vec![$(rug::Rational::from($x)),*])
     }
 }
 
@@ -184,15 +289,20 @@ macro_rules! expand_poly {
         vec![$(poly![$($x),*]),*].into_iter().product::<Polynomial<num::Rational64>>()
     }
 }
+macro_rules! expand_poly_rug {
+    ($([$($x:expr),*]),*) => {
+        vec![$(poly_rug![$($x),*]),*].into_iter().product::<Polynomial<rug::Rational>>()
+    }
+}
 
 fn check_eea<T>(a: T, b: T) -> bool
 where
-    T: Display + Debug + Zero + One + Clone + Eq + RingNormalize,
-    for<'x> &'x T: EuclideanRingOperation<T>,
+    T: Display + Debug + Zero + One + Clone + Eq + RingNormalize + EuclideanRingOperationFrom,
+    for<'x> &'x T: EuclideanRingOperation,
 {
     let g = gcd::<T>(a.clone(), b.clone());
     let (d, x, y) = extended_euclidian_algorithm::<T>(a.clone(), b.clone());
-    g.is_similar(&d) && &(&x * &a) + &(&y * &b) == d
+    g.is_similar(&d) && T::from(&T::from(&x * &a) + &T::from(&y * &b)) == d
 }
 
 #[test]
@@ -210,8 +320,22 @@ fn test_eea2() {
 }
 
 #[test]
+fn test_eea3() {
+    type R = Polynomial<rug::Rational>;
+    let z = R::zero();
+    check_eea::<R>(z.clone(), z.clone());
+    let a = expand_poly_rug![[2], [1, 1], [2, 1], [3, 1]];
+    let b = expand_poly_rug![[3], [1, 1], [4, 1]];
+    let d = expand_poly_rug![[4, 1], [5, 1]];
+    assert!(check_eea::<R>(a.clone(), z.clone()));
+    assert!(check_eea::<R>(z, a.clone()));
+    assert!(check_eea::<R>(a.clone(), b));
+    assert!(check_eea::<R>(a, d));
+}
+
+#[test]
 fn pseudo_division() {
-    let f = polynomial![1, -1, -1, 1]; // 1-x-x^2+x^3 ∈ Z[x]
+    let f = polynomial![1i32, -1, -1, 1]; // 1-x-x^2+x^3 ∈ Z[x]
     let g = polynomial![1, 2]; // 1+2x ∈ Z[x]
     let mut r = f.clone();
     let (s, q) = r.pseudo_division(&g);
@@ -241,17 +365,17 @@ fn pseudo_division() {
 
 #[test]
 fn resultant() {
-    let f = polynomial![-4, 0, 0, 0, 1]; // -4+x^4 ∈ Z[x]
+    let f = polynomial![-4i32, 0, 0, 0, 1]; // -4+x^4 ∈ Z[x]
     let g = polynomial![0, 2, 0, 1]; // 2x+x^3 ∈ Z[x]
     let r = f.resultant(g); // deg(gcd(f, g)) = deg(x^2-2) = 2 ≠ 0
     assert_eq!(r, 0);
 
-    let f = polynomial![polynomial![1], polynomial![0], polynomial![1]]; // 1+x^2 ∈ Z[y][x]
+    let f = polynomial![polynomial![1i32], polynomial![0], polynomial![1]]; // 1+x^2 ∈ Z[y][x]
     let g = polynomial![polynomial![1], polynomial![1, 2]]; // 1+(1+2y)x ∈ Z[y][x]
     let r = f.resultant(g);
     assert_eq!(r, polynomial![2, 4, 4]); // 2+4y+4y^2
 
-    let y3 = Polynomial::from_monomial(polynomial![-1], 3); // -y^3 ∈ Z[x][y]
+    let y3 = Polynomial::from_monomial(polynomial![-1i32], 3); // -y^3 ∈ Z[x][y]
     let y2xy = Polynomial::from_monomial(polynomial![0, -1], 2) + &y3; // -xy^2-y^3 ∈ Z[x][y]
     let x = polynomial![polynomial![0, 1]]; // x ∈ Z[x][y]
     let f = polynomial![y3, polynomial![], x.clone()]; // -y^3+xz^2 ∈ Z[x][y][z]
