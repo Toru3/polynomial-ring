@@ -183,13 +183,13 @@ where
                 match i {
                     0 => write!(f, "1")?,
                     1 => write!(f, "x")?,
-                    _ => write!(f, "x^{}", i)?,
+                    _ => write!(f, "x^{i}")?,
                 }
             } else {
                 match i {
-                    0 => write!(f, "{}", c)?,
-                    1 => write!(f, "{}*x", c)?,
-                    _ => write!(f, "{}*x^{}", c, i)?,
+                    0 => write!(f, "{c}")?,
+                    1 => write!(f, "{c}*x")?,
+                    _ => write!(f, "{c}*x^{i}")?,
                 }
             }
         }
