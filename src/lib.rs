@@ -15,6 +15,8 @@ use sealed::Sized;
 use std::fmt;
 use std::ops::{AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
 mod ops;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /** Polynomial ring $`R[x]`$
 
@@ -29,6 +31,7 @@ assert_eq!(f, q * g + r);
 ```
 */
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Polynomial<T> {
     coeff: Vec<T>,
 }
