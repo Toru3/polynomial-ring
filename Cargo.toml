@@ -10,6 +10,7 @@ repository = "https://gitlab.com/Toru3/polynomial-ring"
 readme = "README.md"
 keywords = ["algebra", "polynomial"]
 categories = ["data-structures", "algorithms", "mathematics"]
+rust-version = "1.74"
 
 [dependencies]
 auto-impl-ops = { version = "0.2.1", features = ["take_mut"] }
