@@ -2,12 +2,14 @@
 #![doc = include_str!("../README.md")]
 
 mod sealed {
+    #[cfg(feature = "__internal_inject_debug")]
     pub trait SizedExt: std::marker::Sized + std::fmt::Debug + std::fmt::Display {}
+    #[cfg(feature = "__internal_inject_debug")]
     impl<T> SizedExt for T where T: std::marker::Sized + std::fmt::Debug + std::fmt::Display {}
-    #[cfg(not(feature = "__internal_inject_debug"))]
-    pub use std::marker::Sized;
     #[cfg(feature = "__internal_inject_debug")]
     pub use SizedExt as Sized;
+    #[cfg(not(feature = "__internal_inject_debug"))]
+    pub use std::marker::Sized;
 }
 use num_traits::{One, Zero};
 use ring_algorithm::{gcd, RingNormalize};
