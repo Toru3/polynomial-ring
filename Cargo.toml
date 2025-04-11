@@ -19,7 +19,7 @@ ring-algorithm = { version = "0.8.0" }
 serde = { version = "1.0.219", features = ["derive"], optional = true }
 
 [dev-dependencies]
-num = "0.4.0"
+num = "0.4.3"
 rug = { version = "1.18.0", features = ["num-traits"] }
 
 [features]
