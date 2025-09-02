@@ -22,6 +22,10 @@ serde = { version = "1.0.219", features = ["derive"], optional = true }
 num = "0.4.3"
 rug = { version = "1.18.0", features = ["num-traits"] }
 
+[patch.crates-io.gmp-mpfr-sys]
+git = 'https://gitlab.com/benruijl/gmp-mpfr-sys.git'
+rev = 'fe062a3066618bbb2a92ea3f79adc741d9ec1f3f'
+
 [features]
 default = []
 serde = ["dep:serde"]
